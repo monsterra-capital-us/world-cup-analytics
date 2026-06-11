@@ -5,9 +5,9 @@ import { Card, MatchLink, TeamChip, WdlBar } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
-export default function MatchesPage() {
-  const predictions = getPredictions();
-  const state = loadState();
+export default async function MatchesPage() {
+  const predictions = await getPredictions();
+  const state = await loadState();
 
   const byDay = new Map<string, typeof FIXTURES>();
   for (const f of FIXTURES) {

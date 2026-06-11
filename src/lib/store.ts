@@ -1,14 +1,10 @@
-import fs from "node:fs";
-import path from "node:path";
 import { Injury, MatchResult, Predictions, TournamentState } from "./types";
 import { TEAM_BY_ID, TEAMS } from "@/data/teams";
 import { FIXTURE_BY_ID } from "@/data/fixtures";
 import { eloUpdate } from "./model/elo";
 import { injuryPenalty } from "./model/strength";
 import { runSimulation } from "./model/simulate";
-
-const DATA_DIR = path.join(process.cwd(), "data");
-const STATE_FILE = path.join(DATA_DIR, "state.json");
+import { getStorage } from "./storage";
 
 /**
  * Illustrative seed entries so the dashboard demonstrates injury impact
@@ -50,27 +46,20 @@ function freshState(): TournamentState {
   };
 }
 
-export function loadState(): TournamentState {
-  try {
-    return JSON.parse(fs.readFileSync(STATE_FILE, "utf8")) as TournamentState;
-  } catch {
-    const state = freshState();
-    saveState(state);
-    return state;
-  }
-}
-
-function saveState(state: TournamentState): void {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-  fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2));
+export async function loadState(): Promise<TournamentState> {
+  const stored = await getStorage().load();
+  if (stored) return stored;
+  const state = freshState();
+  await getStorage().save(state);
+  return state;
 }
 
 // ─────────────── predictions cache (recomputed when version changes) ───────────────
 
 let cached: Predictions | null = null;
 
-export function getPredictions(): Predictions {
-  const state = loadState();
+export async function getPredictions(): Promise<Predictions> {
+  const state = await loadState();
   if (!cached || cached.stateVersion !== state.version) {
     cached = runSimulation(state);
   }
@@ -79,18 +68,18 @@ export function getPredictions(): Predictions {
 
 // ─────────────── mutations (each bumps version → triggers recompute) ───────────────
 
-export function recordResult(
+export async function recordResult(
   fixtureId: string,
   homeGoals: number,
   awayGoals: number,
-): TournamentState {
+): Promise<TournamentState> {
   const fixture = FIXTURE_BY_ID[fixtureId];
   if (!fixture) throw new Error(`Unknown fixture: ${fixtureId}`);
   if (!Number.isInteger(homeGoals) || !Number.isInteger(awayGoals) || homeGoals < 0 || awayGoals < 0) {
     throw new Error("Goals must be non-negative integers");
   }
 
-  const state = loadState();
+  const state = await loadState();
   const prior = state.results[fixtureId];
   if (prior) throw new Error(`Result already recorded for ${fixtureId} (${prior.homeGoals}-${prior.awayGoals})`);
 
@@ -109,23 +98,23 @@ export function recordResult(
   state.elo[fixture.away] = Math.round(newB * 10) / 10;
 
   state.version++;
-  saveState(state);
+  await getStorage().save(state);
   return state;
 }
 
-export function addInjury(input: {
+export async function addInjury(input: {
   teamId: string;
   player: string;
   status: Injury["status"];
   detail?: string;
-}): TournamentState {
+}): Promise<TournamentState> {
   if (!TEAM_BY_ID[input.teamId]) throw new Error(`Unknown team: ${input.teamId}`);
-  if (!input.player.trim()) throw new Error("Player name is required");
+  if (!input.player?.trim()) throw new Error("Player name is required");
   if (!["out", "doubtful", "returning"].includes(input.status)) {
     throw new Error(`Invalid status: ${input.status}`);
   }
 
-  const state = loadState();
+  const state = await loadState();
   state.injuries.push({
     id: `inj-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     teamId: input.teamId,
@@ -135,23 +124,17 @@ export function addInjury(input: {
     reportedAt: new Date().toISOString().slice(0, 10),
   });
   state.version++;
-  saveState(state);
+  await getStorage().save(state);
   return state;
 }
 
-export function removeInjury(id: string): TournamentState {
-  const state = loadState();
+export async function removeInjury(id: string): Promise<TournamentState> {
+  const state = await loadState();
   const before = state.injuries.length;
   state.injuries = state.injuries.filter((i) => i.id !== id);
   if (state.injuries.length === before) throw new Error(`Unknown injury id: ${id}`);
   state.version++;
-  saveState(state);
-  return state;
-}
-
-export function resetState(): TournamentState {
-  const state = freshState();
-  saveState(state);
+  await getStorage().save(state);
   return state;
 }
 

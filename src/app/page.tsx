@@ -14,9 +14,9 @@ import {
 
 export const dynamic = "force-dynamic";
 
-export default function Dashboard() {
-  const predictions = getPredictions();
-  const state = loadState();
+export default async function Dashboard() {
+  const predictions = await getPredictions();
+  const state = await loadState();
 
   const played = Object.keys(state.results).length;
   const upcoming = FIXTURES.filter((f) => !state.results[f.id]).slice(0, 6);

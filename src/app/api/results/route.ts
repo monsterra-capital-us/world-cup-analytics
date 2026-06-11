@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const state = recordResult(body.fixtureId, body.homeGoals, body.awayGoals);
+    const state = await recordResult(body.fixtureId, body.homeGoals, body.awayGoals);
     return NextResponse.json({ ok: true, version: state.version });
   } catch (e) {
     return NextResponse.json(

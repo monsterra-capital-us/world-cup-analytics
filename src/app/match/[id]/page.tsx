@@ -20,8 +20,8 @@ export default async function MatchPage({
   const fixture = FIXTURE_BY_ID[id];
   if (!fixture) notFound();
 
-  const predictions = getPredictions();
-  const state = loadState();
+  const predictions = await getPredictions();
+  const state = await loadState();
   const mp = predictions.matchPredictions[id];
   const result = state.results[id];
   const home = TEAM_BY_ID[fixture.home];

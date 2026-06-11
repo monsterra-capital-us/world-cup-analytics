@@ -5,8 +5,8 @@ import { Card, SectionTitle, TeamChip } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
-export default function GroupsPage() {
-  const predictions = getPredictions();
+export default async function GroupsPage() {
+  const predictions = await getPredictions();
   const outlookById = Object.fromEntries(
     predictions.outlooks.map((o) => [o.teamId, o]),
   );

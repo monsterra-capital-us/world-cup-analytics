@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const state = addInjury(body);
+    const state = await addInjury(body);
     return NextResponse.json({ ok: true, version: state.version });
   } catch (e) {
     return NextResponse.json(
@@ -22,7 +22,7 @@ export async function DELETE(req: Request) {
   try {
     const id = new URL(req.url).searchParams.get("id");
     if (!id) throw new Error("id query param required");
-    const state = removeInjury(id);
+    const state = await removeInjury(id);
     return NextResponse.json({ ok: true, version: state.version });
   } catch (e) {
     return NextResponse.json(

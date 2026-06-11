@@ -5,8 +5,8 @@ import AdminClient from "./AdminClient";
 
 export const dynamic = "force-dynamic";
 
-export default function AdminPage() {
-  const state = loadState();
+export default async function AdminPage() {
+  const state = await loadState();
   return (
     <AdminClient
       teams={TEAMS.map((t) => ({

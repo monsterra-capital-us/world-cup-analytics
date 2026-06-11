@@ -36,12 +36,29 @@ recomputes everything each time a finished match is recorded.
 
 Deterministic seeded RNG: the same state always produces the same odds.
 
-## Running
+## Running locally
 
 ```bash
 npm install
 npm run dev   # http://localhost:3000
 ```
+
+With no database configured, state persists to `data/state.json` —
+zero-setup for local use.
+
+## Deploying to Vercel
+
+1. Go to [vercel.com/new](https://vercel.com/new) and import this
+   repository (framework is auto-detected as Next.js — no settings needed).
+2. In the project's **Storage** tab, create a **Postgres** database (Neon,
+   free tier is fine) and connect it. This injects `POSTGRES_URL` into the
+   deployment automatically.
+3. Redeploy. Done — the app creates its one table on first request and all
+   recorded results/injuries persist in the database.
+
+Any host works the same way: set `POSTGRES_URL` (or `DATABASE_URL`) to any
+Postgres connection string, or set nothing and rely on file storage on
+hosts with a persistent disk.
 
 ## Updating data after each match
 
@@ -75,9 +92,9 @@ curl localhost:3000/api/state         # raw state + teams + fixtures
   schedule exactly.
 - The round-of-32 bracket template is a close simplification of FIFA's
   published bracket (see `R32_TEMPLATE` in `src/lib/model/simulate.ts`).
-- State persists to `data/state.json` (gitignored, reseeded on first run).
-  For serverless deployment, swap `src/lib/store.ts` for a database-backed
-  implementation — the model layer is storage-agnostic.
+- Storage is pluggable (`src/lib/storage.ts`): a Postgres JSONB row when
+  `POSTGRES_URL`/`DATABASE_URL` is set, otherwise a gitignored
+  `data/state.json` reseeded on first run.
 
 ## Stack
 
