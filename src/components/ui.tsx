@@ -11,7 +11,7 @@ export function Card({
 }) {
   return (
     <section
-      className={`rounded-2xl border border-edge bg-surface/80 shadow-[0_1px_0_rgba(255,255,255,0.03)_inset] ${className}`}
+      className={`min-w-0 rounded-2xl border border-edge bg-surface/80 shadow-[0_1px_0_rgba(255,255,255,0.03)_inset] ${className}`}
     >
       {children}
     </section>
@@ -49,9 +49,17 @@ export function TeamChip({
 }) {
   const t = TEAM_BY_ID[teamId];
   return (
-    <span className={`inline-flex items-center gap-2 ${bold ? "font-semibold" : ""}`}>
-      <span className="text-base leading-none">{t.flag}</span>
-      <span className="truncate">{short ? t.id : t.name}</span>
+    <span className={`inline-flex min-w-0 max-w-full items-center gap-2 ${bold ? "font-semibold" : ""}`}>
+      <span className="shrink-0 text-base leading-none">{t.flag}</span>
+      {short ? (
+        <span className="truncate">{t.id}</span>
+      ) : (
+        <span className="truncate">
+          {/* 3-letter code on phones, full name from sm up */}
+          <span className="sm:hidden">{t.id}</span>
+          <span className="hidden sm:inline">{t.name}</span>
+        </span>
+      )}
     </span>
   );
 }
@@ -110,7 +118,7 @@ export function MatchLink({
   return (
     <Link
       href={`/match/${fixtureId}`}
-      className="block rounded-xl transition-colors hover:bg-surface-2/60"
+      className="block min-w-0 rounded-xl transition-colors hover:bg-surface-2/60"
     >
       {children}
     </Link>

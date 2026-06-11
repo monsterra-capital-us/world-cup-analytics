@@ -133,11 +133,11 @@ function ScoreCard({
   return (
     <Card>
       <SectionTitle title={title} hint={hint} />
-      <div className="px-5 pb-5">
+      <div className="overflow-x-auto px-5 pb-5">
         {scores.length === 0 ? (
           <p className="py-2 text-sm text-muted">No data yet.</p>
         ) : (
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[420px] text-sm">
             <thead>
               <tr className="text-right text-xs uppercase tracking-wider text-muted">
                 <th className="pb-2 text-left font-medium">Source</th>

@@ -35,23 +35,23 @@ export default async function MatchPage({
       </Link>
 
       {/* header */}
-      <Card className="px-6 py-5">
+      <Card className="px-4 py-4 sm:px-6 sm:py-5">
         <p className="text-xs uppercase tracking-wider text-muted">
           Group {fixture.group} · Matchday {fixture.matchday} · {fixture.venue} ·{" "}
           {kickoffLabel(fixture.kickoff)}
         </p>
-        <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-2">
-          <span className="text-2xl font-bold">
+        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 sm:gap-x-6">
+          <span className="text-xl font-bold sm:text-2xl">
             {home.flag} {home.name}
           </span>
           {result ? (
-            <span className="rounded-xl bg-surface-2 px-4 py-1.5 text-2xl font-black tabular-nums">
+            <span className="rounded-xl bg-surface-2 px-3 py-1 text-xl font-black tabular-nums sm:px-4 sm:py-1.5 sm:text-2xl">
               {result.homeGoals}–{result.awayGoals}
             </span>
           ) : (
-            <span className="text-xl text-muted">vs</span>
+            <span className="text-lg text-muted sm:text-xl">vs</span>
           )}
-          <span className="text-2xl font-bold">
+          <span className="text-xl font-bold sm:text-2xl">
             {away.flag} {away.name}
           </span>
         </div>

@@ -72,7 +72,7 @@ export default async function Dashboard() {
                   <span className="w-5 text-right text-xs tabular-nums text-muted">
                     {i + 1}
                   </span>
-                  <span className="w-44 shrink-0 truncate text-sm">
+                  <span className="w-28 shrink-0 truncate text-sm sm:w-44">
                     <TeamChip teamId={o.teamId} bold={i < 3} />
                   </span>
                   <div className="h-3 flex-1 overflow-hidden rounded-full bg-surface-2">
@@ -85,7 +85,7 @@ export default async function Dashboard() {
                     {pct(o.pChampion)}
                   </span>
                   <span
-                    className={`w-12 text-right text-[11px] tabular-nums ${
+                    className={`hidden w-12 text-right text-[11px] tabular-nums sm:block ${
                       eloDelta > 0.5
                         ? "text-accent"
                         : eloDelta < -0.5

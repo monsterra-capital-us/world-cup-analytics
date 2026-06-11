@@ -380,9 +380,9 @@ export default function AdminClient({
               return (
                 <div
                   key={o.fixtureId}
-                  className="flex items-center gap-3 rounded-xl bg-surface-2/60 px-4 py-2.5 text-sm"
+                  className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl bg-surface-2/60 px-4 py-2.5 text-sm"
                 >
-                  <span className="min-w-0 flex-1 truncate">
+                  <span className="min-w-0 flex-1 basis-48 truncate">
                     {teamById[f.home].flag} {teamById[f.home].name} v{" "}
                     {teamById[f.away].flag} {teamById[f.away].name}
                   </span>
@@ -427,12 +427,12 @@ export default function AdminClient({
           {injuries.map((inj) => (
             <div
               key={inj.id}
-              className="flex items-center gap-3 rounded-xl bg-surface-2/60 px-4 py-2.5 text-sm"
+              className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl bg-surface-2/60 px-4 py-2.5 text-sm"
             >
               <span className="text-base">{teamById[inj.teamId]?.flag}</span>
               <span className="font-medium">{inj.player}</span>
               <InjuryBadge status={inj.status} />
-              <span className="min-w-0 flex-1 truncate text-xs text-muted">
+              <span className="min-w-0 flex-1 basis-48 truncate text-xs text-muted">
                 {teamById[inj.teamId]?.name}
                 {inj.detail ? ` — ${inj.detail}` : ""} · reported {inj.reportedAt}
               </span>
