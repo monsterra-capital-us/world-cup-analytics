@@ -38,13 +38,40 @@ export interface Fixture {
   away: string; // team id
   kickoff: string; // ISO datetime (UTC)
   venue: string;
+  /** host country of the venue — host teams get a home-advantage boost */
+  country: "USA" | "MEX" | "CAN";
   matchday: 1 | 2 | 3;
+}
+
+/** outcome probabilities frozen at the moment the result was recorded */
+export interface ForecastSnapshot {
+  model: OutcomeProbs;
+  market?: OutcomeProbs;
+  blend: OutcomeProbs;
+}
+
+export interface OutcomeProbs {
+  pHome: number;
+  pDraw: number;
+  pAway: number;
 }
 
 export interface MatchResult {
   fixtureId: string;
   homeGoals: number;
   awayGoals: number;
+  recordedAt: string;
+  /** pre-match forecast, stored for honest out-of-sample evaluation */
+  forecast?: ForecastSnapshot;
+}
+
+/** decimal odds for a fixture, e.g. from Pinnacle */
+export interface MarketOdds {
+  fixtureId: string;
+  home: number;
+  draw: number;
+  away: number;
+  source?: string;
   recordedAt: string;
 }
 
@@ -56,13 +83,22 @@ export interface TournamentState {
   elo: Record<string, number>;
   results: Record<string, MatchResult>;
   injuries: Injury[];
+  /** sportsbook odds entered per fixture; blended into predictions */
+  marketOdds: Record<string, MarketOdds>;
 }
 
 export interface MatchPrediction {
   fixtureId: string;
+  /** blended probabilities (market-anchored when odds exist) — used everywhere */
   pHome: number;
   pDraw: number;
   pAway: number;
+  /** pure model view, for comparison */
+  model: OutcomeProbs;
+  /** de-vigged market view, when odds have been entered */
+  market?: OutcomeProbs & { source?: string };
+  /** Elo points of home advantage applied to the home side (host nations) */
+  homeEdge: number;
   expHomeGoals: number;
   expAwayGoals: number;
   /** most likely scorelines, descending probability */

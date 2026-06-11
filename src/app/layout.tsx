@@ -23,6 +23,7 @@ const NAV = [
   { href: "/", label: "Dashboard" },
   { href: "/matches", label: "Matches" },
   { href: "/groups", label: "Groups" },
+  { href: "/model", label: "Model" },
   { href: "/admin", label: "Data Manager" },
 ];
 

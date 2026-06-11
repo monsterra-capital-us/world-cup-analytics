@@ -24,6 +24,7 @@ export default async function AdminPage() {
         played: Boolean(state.results[f.id]),
       }))}
       injuries={state.injuries}
+      marketOdds={state.marketOdds}
       version={state.version}
     />
   );

@@ -13,11 +13,17 @@ const GOAL_ELASTICITY = 1.05;
 /** Dixon-Coles correlation for 0-0/1-0/0-1/1-1 */
 const RHO = -0.08;
 
-export function expectedGoals(ratingDiff: number): { lambdaA: number; lambdaB: number } {
+/** knockout matches are cagier: scale expected goals down */
+export const KNOCKOUT_GOAL_SCALE = 0.88;
+
+export function expectedGoals(
+  ratingDiff: number,
+  goalScale = 1,
+): { lambdaA: number; lambdaB: number } {
   const shift = Math.exp((GOAL_ELASTICITY * ratingDiff) / 400);
   return {
-    lambdaA: clamp(BASE_GOALS * shift, 0.15, 4.6),
-    lambdaB: clamp(BASE_GOALS / shift, 0.15, 4.6),
+    lambdaA: clamp(BASE_GOALS * goalScale * shift, 0.15, 4.6),
+    lambdaB: clamp((BASE_GOALS * goalScale) / shift, 0.15, 4.6),
   };
 }
 
@@ -48,8 +54,8 @@ export interface ScoreDistribution {
   lambdaB: number;
 }
 
-export function scoreDistribution(ratingDiff: number): ScoreDistribution {
-  const { lambdaA, lambdaB } = expectedGoals(ratingDiff);
+export function scoreDistribution(ratingDiff: number, goalScale = 1): ScoreDistribution {
+  const { lambdaA, lambdaB } = expectedGoals(ratingDiff, goalScale);
   const pmfA = Array.from({ length: MAX_GOALS + 1 }, (_, k) => poissonPmf(lambdaA, k));
   const pmfB = Array.from({ length: MAX_GOALS + 1 }, (_, k) => poissonPmf(lambdaB, k));
 

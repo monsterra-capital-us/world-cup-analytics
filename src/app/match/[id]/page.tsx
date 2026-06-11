@@ -66,7 +66,49 @@ export default async function MatchPage({
             <p className="mt-2 text-xs text-muted">
               Expected goals: {home.id} {mp.expHomeGoals.toFixed(2)} · {away.id}{" "}
               {mp.expAwayGoals.toFixed(2)}
+              {mp.homeEdge !== 0 && (
+                <>
+                  {" "}· host advantage{" "}
+                  {mp.homeEdge > 0 ? home.id : away.id} +{Math.abs(mp.homeEdge)} Elo
+                </>
+              )}
             </p>
+            {mp.market && (
+              <div className="mt-3 overflow-hidden rounded-xl border border-edge text-xs">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-surface-2/60 text-muted">
+                      <th className="px-3 py-1.5 text-left font-medium">Source</th>
+                      <th className="px-3 py-1.5 text-right font-medium">{home.id} win</th>
+                      <th className="px-3 py-1.5 text-right font-medium">Draw</th>
+                      <th className="px-3 py-1.5 text-right font-medium">{away.id} win</th>
+                    </tr>
+                  </thead>
+                  <tbody className="tabular-nums">
+                    <tr className="border-t border-edge/60">
+                      <td className="px-3 py-1.5 text-muted">Model</td>
+                      <td className="px-3 py-1.5 text-right">{pct(mp.model.pHome)}</td>
+                      <td className="px-3 py-1.5 text-right">{pct(mp.model.pDraw)}</td>
+                      <td className="px-3 py-1.5 text-right">{pct(mp.model.pAway)}</td>
+                    </tr>
+                    <tr className="border-t border-edge/60">
+                      <td className="px-3 py-1.5 text-muted">
+                        Market{mp.market.source ? ` (${mp.market.source})` : ""}
+                      </td>
+                      <td className="px-3 py-1.5 text-right">{pct(mp.market.pHome)}</td>
+                      <td className="px-3 py-1.5 text-right">{pct(mp.market.pDraw)}</td>
+                      <td className="px-3 py-1.5 text-right">{pct(mp.market.pAway)}</td>
+                    </tr>
+                    <tr className="border-t border-edge/60 font-semibold">
+                      <td className="px-3 py-1.5">Blend (published)</td>
+                      <td className="px-3 py-1.5 text-right">{pct(mp.pHome)}</td>
+                      <td className="px-3 py-1.5 text-right">{pct(mp.pDraw)}</td>
+                      <td className="px-3 py-1.5 text-right">{pct(mp.pAway)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
       </Card>

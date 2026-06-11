@@ -1,24 +1,33 @@
 import { Fixture, GroupId } from "@/lib/types";
 import { GROUPS, teamsInGroup } from "./teams";
 
-const VENUES = [
-  "Estadio Azteca, Mexico City",
-  "MetLife Stadium, New York/New Jersey",
-  "SoFi Stadium, Los Angeles",
-  "AT&T Stadium, Dallas",
-  "Hard Rock Stadium, Miami",
-  "Mercedes-Benz Stadium, Atlanta",
-  "NRG Stadium, Houston",
-  "Arrowhead Stadium, Kansas City",
-  "Lincoln Financial Field, Philadelphia",
-  "Lumen Field, Seattle",
-  "Levi's Stadium, San Francisco Bay Area",
-  "Gillette Stadium, Boston",
-  "BMO Field, Toronto",
-  "BC Place, Vancouver",
-  "Estadio BBVA, Monterrey",
-  "Estadio Akron, Guadalajara",
+type HostCountry = "USA" | "MEX" | "CAN";
+
+const VENUES: { name: string; country: HostCountry }[] = [
+  { name: "Estadio Azteca, Mexico City", country: "MEX" },
+  { name: "MetLife Stadium, New York/New Jersey", country: "USA" },
+  { name: "SoFi Stadium, Los Angeles", country: "USA" },
+  { name: "AT&T Stadium, Dallas", country: "USA" },
+  { name: "Hard Rock Stadium, Miami", country: "USA" },
+  { name: "Mercedes-Benz Stadium, Atlanta", country: "USA" },
+  { name: "NRG Stadium, Houston", country: "USA" },
+  { name: "Arrowhead Stadium, Kansas City", country: "USA" },
+  { name: "Lincoln Financial Field, Philadelphia", country: "USA" },
+  { name: "Lumen Field, Seattle", country: "USA" },
+  { name: "Levi's Stadium, San Francisco Bay Area", country: "USA" },
+  { name: "Gillette Stadium, Boston", country: "USA" },
+  { name: "BMO Field, Toronto", country: "CAN" },
+  { name: "BC Place, Vancouver", country: "CAN" },
+  { name: "Estadio BBVA, Monterrey", country: "MEX" },
+  { name: "Estadio Akron, Guadalajara", country: "MEX" },
 ];
+
+/** host teams play their group matches in their own country, as in the real schedule */
+const HOST_VENUES: Record<string, number[]> = {
+  MEX: [0, 14, 15], // Azteca, Monterrey, Guadalajara
+  USA: [2, 9, 3], // SoFi, Seattle, Dallas
+  CAN: [12, 13, 12], // Toronto, Vancouver, Toronto
+};
 
 /**
  * Group-stage round-robin (72 matches). Matchday windows mirror the real
@@ -45,13 +54,22 @@ function buildGroupFixtures(): Fixture[] {
         const kickoff = new Date(
           mdStart[md] + dayOffset * 86_400_000 + kickoffHoursUTC[slot] * 3_600_000,
         ).toISOString();
+
+        // route host-nation matches to that country's venues
+        const host = [home, away].find((t) => HOST_VENUES[t]);
+        const venueIdx = host
+          ? HOST_VENUES[host][md]
+          : (gi * 3 + md * 5 + pi) % VENUES.length;
+        const venue = VENUES[venueIdx];
+
         fixtures.push({
           id: `${group}${md * 2 + pi + 1}`,
           group: group as GroupId,
           home,
           away,
           kickoff,
-          venue: VENUES[(gi * 3 + md * 5 + pi) % VENUES.length],
+          venue: venue.name,
+          country: venue.country,
           matchday: (md + 1) as 1 | 2 | 3,
         });
       });

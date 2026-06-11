@@ -21,6 +21,16 @@ recomputes everything each time a finished match is recorded.
 - **Live updating** — when a match finishes, record the final score (UI or
   API). Elo ratings update (high K-factor, goal-difference weighted), the
   state version bumps, and the full simulation re-runs on the next read.
+- **Market-anchored ensemble** — enter pre-match sportsbook odds (e.g.
+  Pinnacle closing lines) per fixture; the vig is stripped and the de-vigged
+  probabilities are blended with the model (70/30 market/model). Sharp
+  closing lines are the strongest public predictor of football outcomes, so
+  the blend is designed to be at least as sharp as either input alone.
+- **Honest scoring** — every forecast is frozen at the moment its result is
+  recorded, then scored out-of-sample (Brier, log loss, RPS) on the Model
+  page, with a direct model-vs-market-vs-blend comparison. Whether the
+  system is "on par with the books" is a number the app reports, not a
+  claim.
 - **Group intelligence** — live standings plus simulated advancement
   probabilities under the real 2026 format (top two per group + the eight
   best third-placed teams reach the round of 32).
@@ -31,8 +41,11 @@ recomputes everything each time a finished match is recorded.
 | --- | --- |
 | Team strength | Elo-style ratings, seeded pre-tournament, updated per result with K=50 and a goal-difference multiplier |
 | Injuries | Penalty = player importance × status severity × 65 Elo, capped at 160 per team |
-| Match scores | Rating difference → expected goals (exponential elasticity), independent Poisson with a Dixon-Coles low-score correction |
+| Home advantage | Host nations (USA/MEX/CAN) get +55 Elo in their own country's venues |
+| Match scores | Rating difference → expected goals (exponential elasticity), independent Poisson with a Dixon-Coles low-score correction; knockout expected goals damped ×0.88 |
+| Market ensemble | Decimal odds → de-vig (proportional) → 70/30 market/model blend; score matrix rescaled to blended outcome masses, preserving scoreline shape |
 | Tournament | Monte Carlo: simulate remaining group games, rank groups & best thirds (pts / GD / GF), fixed R32 bracket template, knockouts with strength-weighted extra-time/penalty resolution |
+| Evaluation | Pre-match forecast snapshots scored out-of-sample: multiclass Brier, log loss, ranked probability score |
 
 Deterministic seeded RNG: the same state always produces the same odds.
 
@@ -78,9 +91,29 @@ curl -X POST localhost:3000/api/injuries \
 
 curl -X DELETE 'localhost:3000/api/injuries?id=<injury-id>'
 
+# pre-match market odds (decimal), e.g. Pinnacle closing line
+curl -X POST localhost:3000/api/odds \
+  -H 'Content-Type: application/json' \
+  -d '{"fixtureId":"A1","home":1.65,"draw":3.9,"away":5.6,"source":"Pinnacle"}'
+
 curl localhost:3000/api/predictions   # full computed payload
 curl localhost:3000/api/state         # raw state + teams + fixtures
 ```
+
+## Is this on par with leading sportsbooks?
+
+Treat sharp closing lines (Pinnacle et al.) as the benchmark, not a target
+to beat: they embed proprietary models *plus* the information content of
+sharp betting volume, and consistently outperforming them is the hardest
+problem in sports forecasting. This app takes the credible route instead:
+
+1. anchor on the market when odds are entered (the blend can't be much
+   worse than the market, and the model adds scoreline shape, injury
+   reactions between line moves, and full-tournament simulation the odds
+   don't give you), and
+2. measure everything — the Model page scores model vs market vs blend on
+   identical matches, so the question is answered empirically as results
+   accumulate rather than asserted.
 
 ## Data notes & caveats
 

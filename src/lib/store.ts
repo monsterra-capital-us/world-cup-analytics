@@ -1,9 +1,10 @@
-import { Injury, MatchResult, Predictions, TournamentState } from "./types";
+import { Injury, MarketOdds, MatchResult, Predictions, TournamentState } from "./types";
 import { TEAM_BY_ID, TEAMS } from "@/data/teams";
 import { FIXTURE_BY_ID } from "@/data/fixtures";
 import { eloUpdate } from "./model/elo";
 import { injuryPenalty } from "./model/strength";
-import { runSimulation } from "./model/simulate";
+import { predictFixture, runSimulation } from "./model/simulate";
+import { validateOdds } from "./model/market";
 import { getStorage } from "./storage";
 
 /**
@@ -43,12 +44,16 @@ function freshState(): TournamentState {
     elo: Object.fromEntries(TEAMS.map((t) => [t.id, t.baseElo])),
     results: {},
     injuries: SEED_INJURIES,
+    marketOdds: {},
   };
 }
 
 export async function loadState(): Promise<TournamentState> {
   const stored = await getStorage().load();
-  if (stored) return stored;
+  if (stored) {
+    stored.marketOdds ??= {}; // migrate pre-market states
+    return stored;
+  }
   const state = freshState();
   await getStorage().save(state);
   return state;
@@ -83,11 +88,14 @@ export async function recordResult(
   const prior = state.results[fixtureId];
   if (prior) throw new Error(`Result already recorded for ${fixtureId} (${prior.homeGoals}-${prior.awayGoals})`);
 
+  // freeze the pre-match forecast before Elo moves, for honest evaluation
+  const { model, market, blend } = predictFixture(fixtureId, state);
   const result: MatchResult = {
     fixtureId,
     homeGoals,
     awayGoals,
     recordedAt: new Date().toISOString(),
+    forecast: { model, market, blend },
   };
   state.results[fixtureId] = result;
 
@@ -133,6 +141,43 @@ export async function removeInjury(id: string): Promise<TournamentState> {
   const before = state.injuries.length;
   state.injuries = state.injuries.filter((i) => i.id !== id);
   if (state.injuries.length === before) throw new Error(`Unknown injury id: ${id}`);
+  state.version++;
+  await getStorage().save(state);
+  return state;
+}
+
+export async function setMarketOdds(input: {
+  fixtureId: string;
+  home: number;
+  draw: number;
+  away: number;
+  source?: string;
+}): Promise<TournamentState> {
+  const fixture = FIXTURE_BY_ID[input.fixtureId];
+  if (!fixture) throw new Error(`Unknown fixture: ${input.fixtureId}`);
+  validateOdds(input);
+
+  const state = await loadState();
+  if (state.results[input.fixtureId]) {
+    throw new Error(`Match ${input.fixtureId} already finished — odds can no longer be set`);
+  }
+  state.marketOdds[input.fixtureId] = {
+    fixtureId: input.fixtureId,
+    home: input.home,
+    draw: input.draw,
+    away: input.away,
+    source: input.source?.trim() || undefined,
+    recordedAt: new Date().toISOString(),
+  } satisfies MarketOdds;
+  state.version++;
+  await getStorage().save(state);
+  return state;
+}
+
+export async function removeMarketOdds(fixtureId: string): Promise<TournamentState> {
+  const state = await loadState();
+  if (!state.marketOdds[fixtureId]) throw new Error(`No odds recorded for ${fixtureId}`);
+  delete state.marketOdds[fixtureId];
   state.version++;
   await getStorage().save(state);
   return state;

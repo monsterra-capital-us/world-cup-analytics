@@ -8,9 +8,17 @@ import {
 } from "@/lib/types";
 import { FIXTURES } from "@/data/fixtures";
 import { GROUPS, TEAMS, teamsInGroup } from "@/data/teams";
-import { sampleScore, scoreDistribution, topScorelines, ScoreDistribution } from "./poisson";
+import {
+  KNOCKOUT_GOAL_SCALE,
+  sampleScore,
+  scoreDistribution,
+  topScorelines,
+  ScoreDistribution,
+} from "./poisson";
 import { effectiveRating, teamFactors } from "./strength";
 import { eloExpected } from "./elo";
+import { blendOutcomes, devig, rescaleMatrix } from "./market";
+import { Fixture, OutcomeProbs } from "@/lib/types";
 
 export const SIMULATIONS = 5000;
 
@@ -26,17 +34,26 @@ function mulberry32(seed: number): () => number {
 }
 
 /** memoised score distributions keyed by rating diff rounded to 4 Elo pts */
-function makeDistCache() {
+function makeDistCache(goalScale = 1) {
   const cache = new Map<number, ScoreDistribution>();
   return (diff: number): ScoreDistribution => {
     const key = Math.round(diff / 4);
     let d = cache.get(key);
     if (!d) {
-      d = scoreDistribution(key * 4);
+      d = scoreDistribution(key * 4, goalScale);
       cache.set(key, d);
     }
     return d;
   };
+}
+
+/** Elo points credited to a host nation playing in its own country */
+export const HOME_ADVANTAGE = 55;
+
+function homeEdge(f: Fixture): number {
+  if (f.home === f.country) return HOME_ADVANTAGE;
+  if (f.away === f.country) return -HOME_ADVANTAGE;
+  return 0;
 }
 
 // ───────────────────────── group standings ─────────────────────────
@@ -128,22 +145,43 @@ const R32_TEMPLATE: [Slot, Slot][] = [
 
 type StageKey = "pR32" | "pR16" | "pQF" | "pSF" | "pFinal" | "pChampion";
 
+export function predictFixture(
+  fixtureId: string,
+  state: TournamentState,
+): { model: OutcomeProbs; market?: OutcomeProbs; blend: OutcomeProbs; matrix: number[][]; d: ScoreDistribution; edge: number } {
+  const f = FIXTURES.find((x) => x.id === fixtureId)!;
+  const edge = homeEdge(f);
+  const diff = effectiveRating(f.home, state) - effectiveRating(f.away, state) + edge;
+  const d = scoreDistribution(diff);
+  const model: OutcomeProbs = { pHome: d.pA, pDraw: d.pDraw, pAway: d.pB };
+  const odds = state.marketOdds[fixtureId];
+  if (!odds) return { model, blend: model, matrix: d.matrix, d, edge };
+  const market = devig(odds);
+  const blend = blendOutcomes(model, market);
+  return { model, market, blend, matrix: rescaleMatrix(d.matrix, blend), d, edge };
+}
+
 export function runSimulation(state: TournamentState, nSims = SIMULATIONS): Predictions {
   const rand = mulberry32(20260611 ^ state.version);
-  const dist = makeDistCache();
+  const koDist = makeDistCache(KNOCKOUT_GOAL_SCALE);
   const ratings: Record<string, number> = {};
   for (const t of TEAMS) ratings[t.id] = effectiveRating(t.id, state);
 
-  // exact (non-MC) per-fixture predictions for the UI
+  // exact (non-MC) per-fixture predictions; market-blended where odds exist
   const matchPredictions: Record<string, MatchPrediction> = {};
+  const samplingMatrix: Record<string, number[][]> = {};
   for (const f of FIXTURES) {
-    const d = scoreDistribution(ratings[f.home] - ratings[f.away]);
+    const { model, market, blend, matrix, d, edge } = predictFixture(f.id, state);
+    samplingMatrix[f.id] = matrix;
     matchPredictions[f.id] = {
       fixtureId: f.id,
-      pHome: d.pA, pDraw: d.pDraw, pAway: d.pB,
+      pHome: blend.pHome, pDraw: blend.pDraw, pAway: blend.pAway,
+      model,
+      market: market ? { ...market, source: state.marketOdds[f.id]?.source } : undefined,
+      homeEdge: edge,
       expHomeGoals: d.lambdaA, expAwayGoals: d.lambdaB,
-      topScores: topScorelines(d.matrix, 5),
-      scoreMatrix: d.matrix.map((row) => row.map((p) => Number(p.toFixed(5)))),
+      topScores: topScorelines(matrix, 5),
+      scoreMatrix: matrix.map((row) => row.map((p) => Number(p.toFixed(5)))),
       factors: [teamFactors(f.home, state), teamFactors(f.away, state)],
     };
   }
@@ -167,7 +205,7 @@ export function runSimulation(state: TournamentState, nSims = SIMULATIONS): Pred
         if (r) {
           applyScore(rows, f.home, f.away, r.homeGoals, r.awayGoals);
         } else {
-          const sc = sampleScore(dist(ratings[f.home] - ratings[f.away]).matrix, rand);
+          const sc = sampleScore(samplingMatrix[f.id], rand);
           applyScore(rows, f.home, f.away, sc.a, sc.b);
         }
       }
@@ -200,7 +238,7 @@ export function runSimulation(state: TournamentState, nSims = SIMULATIONS): Pred
     for (const advance of stageCounters) {
       const next: string[] = [];
       for (let i = 0; i < round.length; i += 2) {
-        const winner = playKnockout(round[i], round[i + 1], ratings, dist, rand);
+        const winner = playKnockout(round[i], round[i + 1], ratings, koDist, rand);
         next.push(winner);
         advance(winner);
       }
