@@ -107,16 +107,11 @@ export default async function Dashboard() {
           <SectionTitle
             title="Injury watch"
             hint="Each flag lowers the team's effective rating in every forecast"
-            right={
-              <Link href="/admin" className="text-xs text-accent hover:underline">
-                Manage →
-              </Link>
-            }
           />
           <div className="space-y-2 px-5 pb-5">
             {state.injuries.length === 0 && (
               <p className="py-4 text-sm text-muted">
-                No active injury flags. Add squad news in the Data Manager.
+                No active injury flags. Squad news arrives via POST /api/injuries.
               </p>
             )}
             {state.injuries.map((inj) => (
@@ -207,8 +202,8 @@ export default async function Dashboard() {
           <div className="space-y-1 px-3 pb-4">
             {recent.length === 0 && (
               <p className="px-3 py-4 text-sm text-muted">
-                No results yet — the tournament starts today. Record final scores
-                in the Data Manager (or POST to /api/results) as matches finish.
+                No results yet. Final scores sync in automatically once matches
+                finish (or can be POSTed to /api/results).
               </p>
             )}
             {recent.map((r) => {

@@ -9,7 +9,7 @@ import { getStorage } from "./storage";
 
 /**
  * Illustrative seed entries so the dashboard demonstrates injury impact
- * out of the box — replace with real squad news via the Data Manager.
+ * out of the box — replace with real squad news via POST /api/injuries.
  */
 const SEED_INJURIES: Injury[] = [
   {
@@ -17,7 +17,7 @@ const SEED_INJURIES: Injury[] = [
     teamId: "FRA",
     player: "William Saliba",
     status: "doubtful",
-    detail: "Hamstring tightness in final training (sample entry — edit in Data Manager)",
+    detail: "Hamstring tightness in final training (sample entry)",
     reportedAt: "2026-06-09",
   },
   {
@@ -64,6 +64,10 @@ export async function loadState(): Promise<TournamentState> {
 let cached: Predictions | null = null;
 
 export async function getPredictions(): Promise<Predictions> {
+  // lazy auto-sync (dynamic import: sync.ts imports recordResult from here)
+  const { maybeSyncResults } = await import("./sync");
+  await maybeSyncResults();
+
   const state = await loadState();
   if (!cached || cached.stateVersion !== state.version) {
     cached = runSimulation(state);

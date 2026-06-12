@@ -28,7 +28,6 @@ const NAV = [
   { href: "/matches", label: "Matches" },
   { href: "/groups", label: "Groups" },
   { href: "/model", label: "Model" },
-  { href: "/admin", label: "Data Manager" },
 ];
 
 /** Minimal mark: a circle and a centred pentagon — the ball reduced to geometry. */

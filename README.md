@@ -18,9 +18,10 @@ recomputes everything each time a finished match is recorded.
   rating minus an injury penalty weighted by player importance and status
   (`out` / `doubtful` / `returning`). Flagging Mbappé as out moves France's
   odds everywhere, instantly.
-- **Live updating** — when a match finishes, record the final score (UI or
-  API). Elo ratings update (high K-factor, goal-difference weighted), the
-  state version bumps, and the full simulation re-runs on the next read.
+- **Live updating** — finished matches are pulled automatically from a
+  results feed (or POSTed to the API). Elo ratings update (high K-factor,
+  goal-difference weighted), the state version bumps, and the full
+  simulation re-runs on the next read.
 - **Market-anchored ensemble** — enter pre-match sportsbook odds (e.g.
   Pinnacle closing lines) per fixture; the vig is stripped and the de-vigged
   probabilities are blended with the model (70/30 market/model). Sharp
@@ -66,7 +67,10 @@ zero-setup for local use.
 2. In the project's **Storage** tab, create a **Postgres** database (Neon,
    free tier is fine) and connect it. This injects `POSTGRES_URL` into the
    deployment automatically.
-3. Redeploy. Done — the app creates its one table on first request and all
+3. Add a `FOOTBALL_DATA_API_KEY` environment variable (free key from
+   [football-data.org](https://www.football-data.org/)) so finished matches
+   sync in automatically.
+4. Redeploy. Done — the app creates its one table on first request and all
    recorded results/injuries persist in the database.
 
 Any host works the same way: set `POSTGRES_URL` (or `DATABASE_URL`) to any
@@ -75,8 +79,19 @@ hosts with a persistent disk.
 
 ## Updating data after each match
 
-Via the **Data Manager** page, or programmatically (this is the hook for a
-results feed / webhook):
+Results update **automatically**: when a configured feed reports a finished
+match, the app records it on the next page read (throttled to one feed call
+per 5 minutes, only when a fixture should have ended) and a daily cron
+(`vercel.json` → `/api/sync`) backstops quiet periods.
+
+- `FOOTBALL_DATA_API_KEY` — free key from football-data.org (the default
+  feed is their FIFA World Cup endpoint).
+- `RESULTS_FEED_URL` — optional override; any endpoint returning the same
+  match-list shape works.
+- `GET /api/sync` — trigger a sync manually and see what was recorded.
+
+Everything below remains available for webhooks, corrections on a fresh
+state, or running without a feed:
 
 ```bash
 # final score: Mexico 2-0 South Africa (fixture A1)
