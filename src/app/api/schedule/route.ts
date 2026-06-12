@@ -24,7 +24,35 @@ export async function GET(req: Request) {
     );
   }
 
-  const matchId = new URL(req.url).searchParams.get("match");
+  // temporary diagnostics for the API-Football key (whitelisted paths only)
+  const url = new URL(req.url);
+  const af = url.searchParams.get("af");
+  if (af) {
+    const afKey = process.env.API_FOOTBALL_KEY;
+    if (!afKey) {
+      return NextResponse.json({ ok: false, error: "API_FOOTBALL_KEY not set" }, { status: 503 });
+    }
+    const paths: Record<string, string> = {
+      status: "/status",
+      fixtures: "/fixtures?league=1&season=2026",
+      injuries: "/injuries?league=1&season=2026",
+      lineups: `/fixtures/lineups?fixture=${encodeURIComponent(url.searchParams.get("fixture") ?? "")}`,
+    };
+    const path = paths[af];
+    if (!path) return NextResponse.json({ ok: false, error: "unknown probe" }, { status: 400 });
+    const r = await fetch(`https://v3.football.api-sports.io${path}`, {
+      headers: { "x-apisports-key": afKey },
+      cache: "no-store",
+    });
+    const body = await r.json();
+    if (Array.isArray(body?.response) && body.response.length > 3) {
+      body.response = body.response.slice(0, 3);
+      body.truncated = true;
+    }
+    return NextResponse.json({ ok: r.ok, status: r.status, body });
+  }
+
+  const matchId = url.searchParams.get("match");
   if (matchId) {
     const res = await fetch(`https://api.football-data.org/v4/matches/${encodeURIComponent(matchId)}`, {
       headers: { "X-Auth-Token": key },
