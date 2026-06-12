@@ -48,14 +48,15 @@ export async function GET() {
   for (const m of matches) {
     if (m.home && m.away) feedByPair.set([m.home, m.away].sort().join("|"), m);
   }
-  const mismatches = FIXTURES.flatMap((f) => {
+  const mismatches: Record<string, unknown>[] = [];
+  for (const f of FIXTURES) {
     const feed = feedByPair.get([f.home, f.away].sort().join("|"));
-    if (!feed) return [{ fixture: f.id, pair: `${f.home} v ${f.away}`, issue: "not in feed" }];
-    if (feed.utcDate !== f.kickoff) {
-      return [{ fixture: f.id, pair: `${f.home} v ${f.away}`, local: f.kickoff, feed: feed.utcDate }];
+    if (!feed) {
+      mismatches.push({ fixture: f.id, pair: `${f.home} v ${f.away}`, issue: "not in feed" });
+    } else if (feed.utcDate !== f.kickoff) {
+      mismatches.push({ fixture: f.id, pair: `${f.home} v ${f.away}`, local: f.kickoff, feed: feed.utcDate });
     }
-    return [];
-  });
+  }
 
   return NextResponse.json({ ok: true, count: matches.length, mismatches, matches });
 }
