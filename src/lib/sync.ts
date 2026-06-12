@@ -309,6 +309,16 @@ export async function syncInjuries(opts: { force?: boolean } = {}): Promise<Inju
       return { ok: false, configured: true, changed: false, active: state.injuries.length, error: `Feed responded ${res.status}` };
     }
     const data = await res.json();
+    // API-Football reports auth/plan problems as 200 + an errors object
+    if (data?.errors && !Array.isArray(data.errors) && Object.keys(data.errors).length > 0) {
+      return {
+        ok: false,
+        configured: true,
+        changed: false,
+        active: state.injuries.length,
+        error: `Feed error: ${JSON.stringify(data.errors)}`,
+      };
+    }
     const items: unknown[] = Array.isArray(data)
       ? data
       : Array.isArray(data?.response) // API-Football envelope
