@@ -1,85 +1,89 @@
-import { Fixture, GroupId } from "@/lib/types";
-import { GROUPS, teamsInGroup } from "./teams";
-
-type HostCountry = "USA" | "MEX" | "CAN";
-
-const VENUES: { name: string; country: HostCountry }[] = [
-  { name: "Estadio Azteca, Mexico City", country: "MEX" },
-  { name: "MetLife Stadium, New York/New Jersey", country: "USA" },
-  { name: "SoFi Stadium, Los Angeles", country: "USA" },
-  { name: "AT&T Stadium, Dallas", country: "USA" },
-  { name: "Hard Rock Stadium, Miami", country: "USA" },
-  { name: "Mercedes-Benz Stadium, Atlanta", country: "USA" },
-  { name: "NRG Stadium, Houston", country: "USA" },
-  { name: "Arrowhead Stadium, Kansas City", country: "USA" },
-  { name: "Lincoln Financial Field, Philadelphia", country: "USA" },
-  { name: "Lumen Field, Seattle", country: "USA" },
-  { name: "Levi's Stadium, San Francisco Bay Area", country: "USA" },
-  { name: "Gillette Stadium, Boston", country: "USA" },
-  { name: "BMO Field, Toronto", country: "CAN" },
-  { name: "BC Place, Vancouver", country: "CAN" },
-  { name: "Estadio BBVA, Monterrey", country: "MEX" },
-  { name: "Estadio Akron, Guadalajara", country: "MEX" },
-];
-
-/** host teams play their group matches in their own country, as in the real schedule */
-const HOST_VENUES: Record<string, number[]> = {
-  MEX: [0, 14, 15], // Azteca, Monterrey, Guadalajara
-  USA: [2, 9, 3], // SoFi, Seattle, Dallas
-  CAN: [12, 13, 12], // Toronto, Vancouver, Toronto
-};
+import { Fixture } from "@/lib/types";
 
 /**
- * Group-stage round-robin (72 matches). Matchday windows mirror the real
- * tournament calendar (11–16, 17–22, 23–27 June 2026); exact kickoff slots
- * are approximations and can be edited here without touching the model.
+ * Group-stage schedule (72 matches), 11–28 June 2026. Kickoff times,
+ * pairings and home/away orientation are taken from the results feed's
+ * official match list (football-data.org, see /api/schedule for a live
+ * comparison). Venue assignments remain editable approximations — the feed
+ * does not publish venues — with host nations routed to stadiums in their
+ * own country.
+ *
+ * Fixture ids are <group><n> with n in kickoff order within the group.
  */
-function buildGroupFixtures(): Fixture[] {
-  const fixtures: Fixture[] = [];
-  const mdStart = [Date.UTC(2026, 5, 11), Date.UTC(2026, 5, 17), Date.UTC(2026, 5, 23)];
-  const kickoffHoursUTC = [16, 19, 22, 1]; // four daily slots
-
-  GROUPS.forEach((group, gi) => {
-    const [t1, t2, t3, t4] = teamsInGroup(group).map((t) => t.id);
-    const rounds: [string, string][][] = [
-      [[t1, t2], [t3, t4]],
-      [[t1, t3], [t4, t2]],
-      [[t4, t1], [t2, t3]],
-    ];
-
-    rounds.forEach((pairs, md) => {
-      pairs.forEach(([home, away], pi) => {
-        const dayOffset = Math.floor(gi / 2); // two groups per day
-        const slot = (gi % 2) * 2 + pi;
-        const kickoff = new Date(
-          mdStart[md] + dayOffset * 86_400_000 + kickoffHoursUTC[slot] * 3_600_000,
-        ).toISOString();
-
-        // route host-nation matches to that country's venues
-        const host = [home, away].find((t) => HOST_VENUES[t]);
-        const venueIdx = host
-          ? HOST_VENUES[host][md]
-          : (gi * 3 + md * 5 + pi) % VENUES.length;
-        const venue = VENUES[venueIdx];
-
-        fixtures.push({
-          id: `${group}${md * 2 + pi + 1}`,
-          group: group as GroupId,
-          home,
-          away,
-          kickoff,
-          venue: venue.name,
-          country: venue.country,
-          matchday: (md + 1) as 1 | 2 | 3,
-        });
-      });
-    });
-  });
-
-  return fixtures.sort((a, b) => a.kickoff.localeCompare(b.kickoff));
-}
-
-export const FIXTURES: Fixture[] = buildGroupFixtures();
+export const FIXTURES: Fixture[] = [
+  { id: "A1", group: "A", home: "MEX", away: "RSA", kickoff: "2026-06-11T19:00:00Z", venue: "Estadio Azteca, Mexico City", country: "MEX", matchday: 1 },
+  { id: "A2", group: "A", home: "KOR", away: "CZE", kickoff: "2026-06-12T02:00:00Z", venue: "MetLife Stadium, New York/New Jersey", country: "USA", matchday: 1 },
+  { id: "B1", group: "B", home: "CAN", away: "BIH", kickoff: "2026-06-12T19:00:00Z", venue: "BMO Field, Toronto", country: "CAN", matchday: 1 },
+  { id: "D1", group: "D", home: "USA", away: "PAR", kickoff: "2026-06-13T01:00:00Z", venue: "SoFi Stadium, Los Angeles", country: "USA", matchday: 1 },
+  { id: "B2", group: "B", home: "QAT", away: "SUI", kickoff: "2026-06-13T19:00:00Z", venue: "Hard Rock Stadium, Miami", country: "USA", matchday: 1 },
+  { id: "C1", group: "C", home: "BRA", away: "MAR", kickoff: "2026-06-13T22:00:00Z", venue: "NRG Stadium, Houston", country: "USA", matchday: 1 },
+  { id: "C2", group: "C", home: "HAI", away: "SCO", kickoff: "2026-06-14T01:00:00Z", venue: "Arrowhead Stadium, Kansas City", country: "USA", matchday: 1 },
+  { id: "D2", group: "D", home: "AUS", away: "TUR", kickoff: "2026-06-14T04:00:00Z", venue: "Levi's Stadium, San Francisco Bay Area", country: "USA", matchday: 1 },
+  { id: "E1", group: "E", home: "GER", away: "CUW", kickoff: "2026-06-14T17:00:00Z", venue: "BMO Field, Toronto", country: "CAN", matchday: 1 },
+  { id: "F1", group: "F", home: "NED", away: "JPN", kickoff: "2026-06-14T20:00:00Z", venue: "Estadio Akron, Guadalajara", country: "MEX", matchday: 1 },
+  { id: "E2", group: "E", home: "CIV", away: "ECU", kickoff: "2026-06-14T23:00:00Z", venue: "BC Place, Vancouver", country: "CAN", matchday: 1 },
+  { id: "F2", group: "F", home: "SWE", away: "TUN", kickoff: "2026-06-15T02:00:00Z", venue: "Estadio Azteca, Mexico City", country: "MEX", matchday: 1 },
+  { id: "H1", group: "H", home: "ESP", away: "CPV", kickoff: "2026-06-15T16:00:00Z", venue: "Mercedes-Benz Stadium, Atlanta", country: "USA", matchday: 1 },
+  { id: "G1", group: "G", home: "BEL", away: "EGY", kickoff: "2026-06-15T19:00:00Z", venue: "SoFi Stadium, Los Angeles", country: "USA", matchday: 1 },
+  { id: "H2", group: "H", home: "KSA", away: "URU", kickoff: "2026-06-15T22:00:00Z", venue: "NRG Stadium, Houston", country: "USA", matchday: 1 },
+  { id: "G2", group: "G", home: "IRN", away: "NZL", kickoff: "2026-06-16T01:00:00Z", venue: "AT&T Stadium, Dallas", country: "USA", matchday: 1 },
+  { id: "I1", group: "I", home: "FRA", away: "SEN", kickoff: "2026-06-16T19:00:00Z", venue: "Lincoln Financial Field, Philadelphia", country: "USA", matchday: 1 },
+  { id: "I2", group: "I", home: "IRQ", away: "NOR", kickoff: "2026-06-16T22:00:00Z", venue: "Lumen Field, Seattle", country: "USA", matchday: 1 },
+  { id: "J1", group: "J", home: "ARG", away: "ALG", kickoff: "2026-06-17T01:00:00Z", venue: "Gillette Stadium, Boston", country: "USA", matchday: 1 },
+  { id: "J2", group: "J", home: "AUT", away: "JOR", kickoff: "2026-06-17T04:00:00Z", venue: "BMO Field, Toronto", country: "CAN", matchday: 1 },
+  { id: "K1", group: "K", home: "POR", away: "COD", kickoff: "2026-06-17T17:00:00Z", venue: "Estadio BBVA, Monterrey", country: "MEX", matchday: 1 },
+  { id: "L1", group: "L", home: "ENG", away: "CRO", kickoff: "2026-06-17T20:00:00Z", venue: "MetLife Stadium, New York/New Jersey", country: "USA", matchday: 1 },
+  { id: "L2", group: "L", home: "GHA", away: "PAN", kickoff: "2026-06-17T23:00:00Z", venue: "SoFi Stadium, Los Angeles", country: "USA", matchday: 1 },
+  { id: "K2", group: "K", home: "UZB", away: "COL", kickoff: "2026-06-18T02:00:00Z", venue: "Estadio Akron, Guadalajara", country: "MEX", matchday: 1 },
+  { id: "A3", group: "A", home: "CZE", away: "RSA", kickoff: "2026-06-18T16:00:00Z", venue: "Mercedes-Benz Stadium, Atlanta", country: "USA", matchday: 2 },
+  { id: "B3", group: "B", home: "SUI", away: "BIH", kickoff: "2026-06-18T19:00:00Z", venue: "Lincoln Financial Field, Philadelphia", country: "USA", matchday: 2 },
+  { id: "B4", group: "B", home: "CAN", away: "QAT", kickoff: "2026-06-18T22:00:00Z", venue: "BC Place, Vancouver", country: "CAN", matchday: 2 },
+  { id: "A4", group: "A", home: "MEX", away: "KOR", kickoff: "2026-06-19T01:00:00Z", venue: "Estadio BBVA, Monterrey", country: "MEX", matchday: 2 },
+  { id: "D3", group: "D", home: "USA", away: "AUS", kickoff: "2026-06-19T19:00:00Z", venue: "Lumen Field, Seattle", country: "USA", matchday: 2 },
+  { id: "C3", group: "C", home: "SCO", away: "MAR", kickoff: "2026-06-19T22:00:00Z", venue: "Gillette Stadium, Boston", country: "USA", matchday: 2 },
+  { id: "C4", group: "C", home: "BRA", away: "HAI", kickoff: "2026-06-20T00:30:00Z", venue: "BMO Field, Toronto", country: "CAN", matchday: 2 },
+  { id: "D4", group: "D", home: "TUR", away: "PAR", kickoff: "2026-06-20T03:00:00Z", venue: "Estadio Akron, Guadalajara", country: "MEX", matchday: 2 },
+  { id: "F3", group: "F", home: "NED", away: "SWE", kickoff: "2026-06-20T17:00:00Z", venue: "Hard Rock Stadium, Miami", country: "USA", matchday: 2 },
+  { id: "E3", group: "E", home: "GER", away: "CIV", kickoff: "2026-06-20T20:00:00Z", venue: "MetLife Stadium, New York/New Jersey", country: "USA", matchday: 2 },
+  { id: "E4", group: "E", home: "ECU", away: "CUW", kickoff: "2026-06-21T00:00:00Z", venue: "SoFi Stadium, Los Angeles", country: "USA", matchday: 2 },
+  { id: "F4", group: "F", home: "TUN", away: "JPN", kickoff: "2026-06-21T04:00:00Z", venue: "Mercedes-Benz Stadium, Atlanta", country: "USA", matchday: 2 },
+  { id: "H3", group: "H", home: "ESP", away: "KSA", kickoff: "2026-06-21T16:00:00Z", venue: "Levi's Stadium, San Francisco Bay Area", country: "USA", matchday: 2 },
+  { id: "G3", group: "G", home: "BEL", away: "IRN", kickoff: "2026-06-21T19:00:00Z", venue: "Arrowhead Stadium, Kansas City", country: "USA", matchday: 2 },
+  { id: "H4", group: "H", home: "URU", away: "CPV", kickoff: "2026-06-21T22:00:00Z", venue: "Gillette Stadium, Boston", country: "USA", matchday: 2 },
+  { id: "G4", group: "G", home: "NZL", away: "EGY", kickoff: "2026-06-22T01:00:00Z", venue: "Lincoln Financial Field, Philadelphia", country: "USA", matchday: 2 },
+  { id: "J3", group: "J", home: "ARG", away: "AUT", kickoff: "2026-06-22T17:00:00Z", venue: "Estadio Azteca, Mexico City", country: "MEX", matchday: 2 },
+  { id: "I3", group: "I", home: "FRA", away: "IRQ", kickoff: "2026-06-22T21:00:00Z", venue: "BC Place, Vancouver", country: "CAN", matchday: 2 },
+  { id: "I4", group: "I", home: "NOR", away: "SEN", kickoff: "2026-06-23T00:00:00Z", venue: "Estadio BBVA, Monterrey", country: "MEX", matchday: 2 },
+  { id: "J4", group: "J", home: "JOR", away: "ALG", kickoff: "2026-06-23T03:00:00Z", venue: "MetLife Stadium, New York/New Jersey", country: "USA", matchday: 2 },
+  { id: "K3", group: "K", home: "POR", away: "UZB", kickoff: "2026-06-23T17:00:00Z", venue: "AT&T Stadium, Dallas", country: "USA", matchday: 2 },
+  { id: "L3", group: "L", home: "ENG", away: "GHA", kickoff: "2026-06-23T20:00:00Z", venue: "NRG Stadium, Houston", country: "USA", matchday: 2 },
+  { id: "L4", group: "L", home: "PAN", away: "CRO", kickoff: "2026-06-23T23:00:00Z", venue: "Arrowhead Stadium, Kansas City", country: "USA", matchday: 2 },
+  { id: "K4", group: "K", home: "COL", away: "COD", kickoff: "2026-06-24T02:00:00Z", venue: "Hard Rock Stadium, Miami", country: "USA", matchday: 2 },
+  { id: "B5", group: "B", home: "SUI", away: "CAN", kickoff: "2026-06-24T19:00:00Z", venue: "BMO Field, Toronto", country: "CAN", matchday: 3 },
+  { id: "B6", group: "B", home: "BIH", away: "QAT", kickoff: "2026-06-24T19:00:00Z", venue: "Estadio BBVA, Monterrey", country: "MEX", matchday: 3 },
+  { id: "C5", group: "C", home: "SCO", away: "BRA", kickoff: "2026-06-24T22:00:00Z", venue: "Estadio Azteca, Mexico City", country: "MEX", matchday: 3 },
+  { id: "C6", group: "C", home: "MAR", away: "HAI", kickoff: "2026-06-24T22:00:00Z", venue: "MetLife Stadium, New York/New Jersey", country: "USA", matchday: 3 },
+  { id: "A5", group: "A", home: "CZE", away: "MEX", kickoff: "2026-06-25T01:00:00Z", venue: "Estadio Akron, Guadalajara", country: "MEX", matchday: 3 },
+  { id: "A6", group: "A", home: "RSA", away: "KOR", kickoff: "2026-06-25T01:00:00Z", venue: "Gillette Stadium, Boston", country: "USA", matchday: 3 },
+  { id: "E5", group: "E", home: "ECU", away: "GER", kickoff: "2026-06-25T20:00:00Z", venue: "NRG Stadium, Houston", country: "USA", matchday: 3 },
+  { id: "E6", group: "E", home: "CUW", away: "CIV", kickoff: "2026-06-25T20:00:00Z", venue: "Arrowhead Stadium, Kansas City", country: "USA", matchday: 3 },
+  { id: "F5", group: "F", home: "TUN", away: "NED", kickoff: "2026-06-25T23:00:00Z", venue: "Lumen Field, Seattle", country: "USA", matchday: 3 },
+  { id: "F6", group: "F", home: "JPN", away: "SWE", kickoff: "2026-06-25T23:00:00Z", venue: "Levi's Stadium, San Francisco Bay Area", country: "USA", matchday: 3 },
+  { id: "D5", group: "D", home: "TUR", away: "USA", kickoff: "2026-06-26T02:00:00Z", venue: "AT&T Stadium, Dallas", country: "USA", matchday: 3 },
+  { id: "D6", group: "D", home: "PAR", away: "AUS", kickoff: "2026-06-26T02:00:00Z", venue: "Hard Rock Stadium, Miami", country: "USA", matchday: 3 },
+  { id: "I5", group: "I", home: "NOR", away: "FRA", kickoff: "2026-06-26T19:00:00Z", venue: "SoFi Stadium, Los Angeles", country: "USA", matchday: 3 },
+  { id: "I6", group: "I", home: "SEN", away: "IRQ", kickoff: "2026-06-26T19:00:00Z", venue: "AT&T Stadium, Dallas", country: "USA", matchday: 3 },
+  { id: "H5", group: "H", home: "URU", away: "ESP", kickoff: "2026-06-27T00:00:00Z", venue: "Estadio Akron, Guadalajara", country: "MEX", matchday: 3 },
+  { id: "H6", group: "H", home: "CPV", away: "KSA", kickoff: "2026-06-27T00:00:00Z", venue: "Estadio Azteca, Mexico City", country: "MEX", matchday: 3 },
+  { id: "G5", group: "G", home: "NZL", away: "BEL", kickoff: "2026-06-27T03:00:00Z", venue: "BMO Field, Toronto", country: "CAN", matchday: 3 },
+  { id: "G6", group: "G", home: "EGY", away: "IRN", kickoff: "2026-06-27T03:00:00Z", venue: "BC Place, Vancouver", country: "CAN", matchday: 3 },
+  { id: "L5", group: "L", home: "PAN", away: "ENG", kickoff: "2026-06-27T21:00:00Z", venue: "Gillette Stadium, Boston", country: "USA", matchday: 3 },
+  { id: "L6", group: "L", home: "CRO", away: "GHA", kickoff: "2026-06-27T21:00:00Z", venue: "BMO Field, Toronto", country: "CAN", matchday: 3 },
+  { id: "K5", group: "K", home: "COL", away: "POR", kickoff: "2026-06-27T23:30:00Z", venue: "Lincoln Financial Field, Philadelphia", country: "USA", matchday: 3 },
+  { id: "K6", group: "K", home: "COD", away: "UZB", kickoff: "2026-06-27T23:30:00Z", venue: "Lumen Field, Seattle", country: "USA", matchday: 3 },
+  { id: "J5", group: "J", home: "JOR", away: "ARG", kickoff: "2026-06-28T02:00:00Z", venue: "Mercedes-Benz Stadium, Atlanta", country: "USA", matchday: 3 },
+  { id: "J6", group: "J", home: "ALG", away: "AUT", kickoff: "2026-06-28T02:00:00Z", venue: "NRG Stadium, Houston", country: "USA", matchday: 3 },
+];
 
 export const FIXTURE_BY_ID: Record<string, Fixture> = Object.fromEntries(
   FIXTURES.map((f) => [f.id, f]),

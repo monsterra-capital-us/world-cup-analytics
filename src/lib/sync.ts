@@ -86,10 +86,19 @@ const TEAM_BY_NORMALISED_NAME = Object.fromEntries(
   TEAMS.map((t) => [normalise(t.name), t.id]),
 );
 
-function resolveTeamId(team?: FeedTeam): string | null {
+// feed TLAs that differ from FIFA trigrams (football-data quirks)
+const TLA_ALIASES: Record<string, string> = {
+  CUR: "CUW", // Curaçao
+  URY: "URU", // Uruguay
+};
+
+export function resolveTeamId(team?: FeedTeam): string | null {
   if (!team) return null;
   const tla = team.tla?.toUpperCase();
-  if (tla && TEAM_ID_SET.has(tla)) return tla;
+  if (tla) {
+    const mapped = TLA_ALIASES[tla] ?? tla;
+    if (TEAM_ID_SET.has(mapped)) return mapped;
+  }
   if (team.name) {
     const norm = normalise(team.name);
     return NAME_ALIASES[norm] ?? TEAM_BY_NORMALISED_NAME[norm] ?? null;

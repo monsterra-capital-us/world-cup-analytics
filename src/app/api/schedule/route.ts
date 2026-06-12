@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { FIXTURES } from "@/data/fixtures";
+import { resolveTeamId } from "@/lib/sync";
 
 export const dynamic = "force-dynamic";
 
@@ -11,8 +12,10 @@ export const dynamic = "force-dynamic";
  * Diagnostics: the results feed's full match list (real kickoff times,
  * pairings, venues) compared against this app's fixture calendar. Used to
  * keep src/data/fixtures.ts honest against the official schedule.
+ * ?match=<feed id> proxies a single match's detail (for inspecting what
+ * the feed exposes, e.g. lineups).
  */
-export async function GET() {
+export async function GET(req: Request) {
   const key = process.env.FOOTBALL_DATA_API_KEY;
   if (!key) {
     return NextResponse.json(
@@ -20,6 +23,19 @@ export async function GET() {
       { status: 503 },
     );
   }
+
+  const matchId = new URL(req.url).searchParams.get("match");
+  if (matchId) {
+    const res = await fetch(`https://api.football-data.org/v4/matches/${encodeURIComponent(matchId)}`, {
+      headers: { "X-Auth-Token": key },
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      return NextResponse.json({ ok: false, error: `Feed responded ${res.status}` }, { status: 502 });
+    }
+    return NextResponse.json({ ok: true, match: await res.json() });
+  }
+
   const res = await fetch("https://api.football-data.org/v4/competitions/WC/matches", {
     headers: { "X-Auth-Token": key },
     cache: "no-store",
@@ -33,8 +49,8 @@ export async function GET() {
     utcDate: m.utcDate,
     stage: m.stage,
     group: m.group ?? null,
-    home: m.homeTeam?.tla ?? m.homeTeam?.name ?? null,
-    away: m.awayTeam?.tla ?? m.awayTeam?.name ?? null,
+    home: resolveTeamId(m.homeTeam) ?? m.homeTeam?.tla ?? null,
+    away: resolveTeamId(m.awayTeam) ?? m.awayTeam?.tla ?? null,
     status: m.status,
     venue: m.venue ?? null,
     score:

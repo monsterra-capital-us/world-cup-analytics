@@ -19,6 +19,21 @@ jobs:
           for m in d.get('mismatches', []): print('MISMATCH', json.dumps(m))
           for m in d.get('matches', []): print('MATCH', json.dumps(m))
           "
+      - name: Inspect lineup availability on a finished match
+        run: |
+          curl -sS --max-time 90 "https://world-cup-analytics.vercel.app/api/schedule?match=537327" -o /tmp/match.json
+          python3 -c "
+          import json
+          d = json.load(open('/tmp/match.json'))
+          m = d.get('match', {})
+          print('keys:', sorted(m.keys()))
+          for side in ('homeTeam','awayTeam'):
+              t = m.get(side) or {}
+              print(side, 'keys:', sorted(t.keys()))
+              print(side, 'lineup:', json.dumps(t.get('lineup'))[:600])
+              print(side, 'formation/coach:', t.get('formation'), json.dumps(t.get('coach')))
+          print('goals:', json.dumps(m.get('goals'))[:400])
+          "
       - name: Probe worldcupapi.com
         run: |
           echo "--- DNS/HTTPS reachability ---"
