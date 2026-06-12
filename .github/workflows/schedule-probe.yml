@@ -1,0 +1,29 @@
+# Temporary diagnostic probe (removed when done):
+# - dumps the real schedule via the deployed /api/schedule
+# - tests whether api.worldcupapi.com is a live service
+name: Schedule probe
+
+on: push
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Real schedule vs local fixtures
+        run: |
+          curl -sS --max-time 90 "https://world-cup-analytics.vercel.app/api/schedule" -o /tmp/schedule.json
+          python3 -c "
+          import json
+          d = json.load(open('/tmp/schedule.json'))
+          print('ok:', d.get('ok'), 'count:', d.get('count'), 'mismatches:', len(d.get('mismatches', [])))
+          for m in d.get('mismatches', []): print('MISMATCH', json.dumps(m))
+          for m in d.get('matches', []): print('MATCH', json.dumps(m))
+          "
+      - name: Probe worldcupapi.com
+        run: |
+          echo "--- DNS/HTTPS reachability ---"
+          curl -sS -o /tmp/wc1.txt -w 'HTTP %{http_code}\n' --max-time 20 "https://api.worldcupapi.com/fixtures?key=probe" || echo "request failed"
+          head -c 400 /tmp/wc1.txt; echo
+          echo "--- no key ---"
+          curl -sS -o /tmp/wc2.txt -w 'HTTP %{http_code}\n' --max-time 20 "https://api.worldcupapi.com/livescores" || echo "request failed"
+          head -c 400 /tmp/wc2.txt; echo
