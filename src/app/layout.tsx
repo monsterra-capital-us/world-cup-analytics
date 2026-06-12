@@ -41,19 +41,29 @@ const NAV = [
   { href: "/model", label: "Model" },
 ];
 
-/** Minimalist ball — capital-blue disc with knocked-out pentagon panel and seams. */
+/** Tactics-board mark — X's and O's, dashed pass to the ball, run arrow — on capital blue. */
 function Mark() {
   return (
     <svg viewBox="0 0 104 104" aria-hidden="true" className="size-9 shrink-0">
-      <circle cx="52" cy="52" r="48" fill="#0059FF" />
-      <g stroke="#fff" strokeWidth="4.5" strokeLinecap="round">
-        <line x1="52" y1="37" x2="52" y2="6" />
-        <line x1="66.3" y1="47.4" x2="95.7" y2="37.8" />
-        <line x1="60.8" y1="64.1" x2="79" y2="89.2" />
-        <line x1="43.2" y1="64.1" x2="25" y2="89.2" />
-        <line x1="37.7" y1="47.4" x2="8.3" y2="37.8" />
+      <rect width="104" height="104" rx="22" fill="#0059FF" />
+      <g
+        stroke="#fff"
+        strokeWidth="5.5"
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <circle cx="22" cy="44" r="9.5" />
+        <circle cx="35" cy="79" r="8" />
+        <path d="M40 10l9 9M49 10l-9 9" />
+        <path d="M84 38l8 8M92 38l-8 8" />
+        <path d="M10 62l8 8M18 62l-8 8" />
+        <path d="M56 78l8 8M64 78l-8 8" />
+        <path d="M42 71 L72 31" strokeDasharray="7 8" />
+        <path d="M32 38 C 52 14, 76 26, 87 64" />
+        <path d="M88.4 53.1 L88 66 L77.1 58.6" />
       </g>
-      <polygon fill="#fff" points="52,37 66.3,47.4 60.8,64.1 43.2,64.1 37.7,47.4" />
+      <circle cx="80" cy="20" r="7.5" fill="#fff" />
     </svg>
   );
 }
