@@ -79,10 +79,11 @@ hosts with a persistent disk.
 
 ## Updating data after each match
 
-Results update **automatically, around the clock**: a Vercel cron polls
-`/api/sync` every 10 minutes and page reads trigger the same check, but the
-feed is only queried — and the model only recomputed — when a fixture
-should have ended without a recorded result.
+Results update **automatically, around the clock**: a GitHub Actions
+schedule (`.github/workflows/results-sync.yml`) polls `/api/sync` every 10
+minutes, a daily Vercel cron and page reads back it up, and the feed is
+only queried — and the model only recomputed — when a fixture should have
+ended without a recorded result.
 
 - `FOOTBALL_DATA_API_KEY` — free key from football-data.org (the default
   feed is their FIFA World Cup endpoint).
