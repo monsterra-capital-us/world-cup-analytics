@@ -1,0 +1,23 @@
+# 24/7 background results polling.
+#
+# Vercel's Hobby plan limits its own cron to once per day, so this workflow
+# pings /api/sync every 10 minutes instead. The endpoint is cheap when idle:
+# it only queries the results feed (and recomputes the model) when a fixture
+# should have finished without a recorded result.
+#
+# Note: GitHub only runs scheduled workflows from the repository's default
+# branch.
+name: Results sync
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Poll /api/sync
+        run: |
+          curl -sS --max-time 60 https://world-cup-analytics.vercel.app/api/sync

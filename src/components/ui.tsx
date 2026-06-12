@@ -11,7 +11,7 @@ export function Card({
 }) {
   return (
     <section
-      className={`rounded-2xl border border-edge bg-surface/80 shadow-[0_1px_0_rgba(255,255,255,0.03)_inset] ${className}`}
+      className={`min-w-0 rounded-2xl border border-edge bg-surface shadow-[0_1px_2px_rgba(0,9,26,0.05),0_6px_16px_-6px_rgba(0,9,26,0.06)] ${className}`}
     >
       {children}
     </section>
@@ -30,8 +30,11 @@ export function SectionTitle({
   return (
     <div className="flex items-baseline justify-between gap-3 px-5 pt-4 pb-3">
       <div>
-        <h2 className="text-sm font-semibold tracking-wide">{title}</h2>
-        {hint && <p className="mt-0.5 text-xs text-muted">{hint}</p>}
+        {/* kit .eyebrow — mono micro-label in capital blue */}
+        <h2 className="font-mono text-[10px] font-medium uppercase tracking-[0.22em] text-accent">
+          {title}
+        </h2>
+        {hint && <p className="mt-1.5 text-xs text-muted">{hint}</p>}
       </div>
       {right}
     </div>
@@ -49,9 +52,17 @@ export function TeamChip({
 }) {
   const t = TEAM_BY_ID[teamId];
   return (
-    <span className={`inline-flex items-center gap-2 ${bold ? "font-semibold" : ""}`}>
-      <span className="text-base leading-none">{t.flag}</span>
-      <span className="truncate">{short ? t.id : t.name}</span>
+    <span className={`inline-flex min-w-0 max-w-full items-center gap-2 ${bold ? "font-semibold" : ""}`}>
+      <span className="shrink-0 text-base leading-none">{t.flag}</span>
+      {short ? (
+        <span className="truncate">{t.id}</span>
+      ) : (
+        <span className="truncate">
+          {/* 3-letter code on phones, full name from sm up */}
+          <span className="sm:hidden">{t.id}</span>
+          <span className="hidden sm:inline">{t.name}</span>
+        </span>
+      )}
     </span>
   );
 }
@@ -71,14 +82,14 @@ export function WdlBar({
   return (
     <div className={className}>
       <div className="flex h-2 w-full overflow-hidden rounded-full bg-surface-2">
-        <div className="bg-accent" style={{ width: `${pHome * 100}%` }} />
-        <div className="bg-slate-500/70" style={{ width: `${pDraw * 100}%` }} />
-        <div className="bg-sky-400" style={{ width: `${pAway * 100}%` }} />
+        <div className="bg-accent-dim" style={{ width: `${pHome * 100}%` }} />
+        <div className="bg-slate-400/80" style={{ width: `${pDraw * 100}%` }} />
+        <div className="bg-info" style={{ width: `${pAway * 100}%` }} />
       </div>
       <div className="mt-1 flex justify-between text-[11px] tabular-nums text-muted">
         <span className="text-accent">{pct(pHome)}</span>
         <span>draw {pct(pDraw)}</span>
-        <span className="text-sky-400">{pct(pAway)}</span>
+        <span className="text-info">{pct(pAway)}</span>
       </div>
     </div>
   );
@@ -87,13 +98,13 @@ export function WdlBar({
 export const STATUS_STYLE: Record<string, string> = {
   out: "bg-danger/15 text-danger",
   doubtful: "bg-gold/15 text-gold",
-  returning: "bg-sky-400/15 text-sky-400",
+  returning: "bg-info/15 text-info",
 };
 
 export function InjuryBadge({ status }: { status: string }) {
   return (
     <span
-      className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${STATUS_STYLE[status] ?? "bg-surface-2 text-muted"}`}
+      className={`rounded-full px-2 py-0.5 font-mono text-[9px] font-medium uppercase tracking-[0.14em] ${STATUS_STYLE[status] ?? "bg-surface-2 text-muted"}`}
     >
       {status}
     </span>
@@ -110,7 +121,7 @@ export function MatchLink({
   return (
     <Link
       href={`/match/${fixtureId}`}
-      className="block rounded-xl transition-colors hover:bg-surface-2/60"
+      className="block min-w-0 rounded-xl transition-colors hover:bg-surface-2/60"
     >
       {children}
     </Link>

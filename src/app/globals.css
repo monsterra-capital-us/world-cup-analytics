@@ -1,16 +1,28 @@
 @import "tailwindcss";
 
+/*
+ * Monsterra Capital brand (from the Mobile UI kit), light mode:
+ * white ground, bone elevated cards, capital-blue accents, capital-950 ink,
+ * slate hairlines, IBM Plex Mono micro-labels.
+ */
 :root {
-  --background: #070d17;
-  --surface: #0d1626;
-  --surface-2: #131f33;
-  --border: #1e2c45;
-  --foreground: #e8eef9;
-  --muted: #8294b3;
-  --accent: #34d399;
-  --accent-dim: #10b981;
-  --gold: #fbbf24;
-  --danger: #f87171;
+  --capital-500: #0059ff;
+  --capital-600: #0050e3;
+  --capital-700: #0039a3;
+  --capital-950: #00091a;
+
+  --background: #ffffff;
+  --surface: #ffffff; /* white cards, hairline + shadow for hierarchy */
+  --surface-2: #f0f2f7; /* slate-100 */
+  --border: #e1e4ee; /* slate-200 hairline */
+  --foreground: var(--capital-950);
+  --muted: #4f5878; /* slate-600 */
+  --accent: var(--capital-500);
+  --accent-dim: var(--capital-600);
+  --success: #16a373;
+  --gold: #b97400; /* kit's light-mode amber label tone */
+  --danger: #e04545;
+  --info: #1b8ac4; /* kit --info, darkened for legibility on white */
 }
 
 @theme inline {
@@ -22,21 +34,47 @@
   --color-muted: var(--muted);
   --color-accent: var(--accent);
   --color-accent-dim: var(--accent-dim);
+  --color-success: var(--success);
   --color-gold: var(--gold);
   --color-danger: var(--danger);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-info: var(--info);
+  --font-sans: var(--font-body);
+  --font-head: var(--font-head);
+  --font-mono: var(--font-plex-mono);
+  /* Monsterra radii: tighter than Tailwind defaults (kit: 4/8/14) */
+  --radius-lg: 8px;
+  --radius-xl: 10px;
+  --radius-2xl: 14px;
 }
 
 body {
   background: var(--background);
   background-image:
-    radial-gradient(1100px 500px at 80% -10%, rgba(16, 185, 129, 0.07), transparent),
-    radial-gradient(900px 450px at 0% 0%, rgba(59, 130, 246, 0.06), transparent);
+    radial-gradient(1100px 500px at 80% -10%, rgba(0, 89, 255, 0.05), transparent),
+    radial-gradient(900px 450px at 0% 0%, rgba(75, 184, 240, 0.04), transparent);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-head), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* kit .tnum — numerals read as data, in Plex Mono */
+.tabular-nums {
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
 }
 
 ::selection {
-  background: rgba(52, 211, 153, 0.3);
+  background: rgba(0, 89, 255, 0.18);
+}
+
+/* horizontally scrollable rows (mobile nav) without a visible scrollbar */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }

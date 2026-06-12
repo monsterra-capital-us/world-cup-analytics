@@ -7,43 +7,12 @@ import { predictFixture, runSimulation } from "./model/simulate";
 import { validateOdds } from "./model/market";
 import { getStorage } from "./storage";
 
-/**
- * Illustrative seed entries so the dashboard demonstrates injury impact
- * out of the box — replace with real squad news via the Data Manager.
- */
-const SEED_INJURIES: Injury[] = [
-  {
-    id: "seed-1",
-    teamId: "FRA",
-    player: "William Saliba",
-    status: "doubtful",
-    detail: "Hamstring tightness in final training (sample entry — edit in Data Manager)",
-    reportedAt: "2026-06-09",
-  },
-  {
-    id: "seed-2",
-    teamId: "BEL",
-    player: "Kevin De Bruyne",
-    status: "returning",
-    detail: "Back from calf injury, short of match fitness (sample entry)",
-    reportedAt: "2026-06-08",
-  },
-  {
-    id: "seed-3",
-    teamId: "GHA",
-    player: "Thomas Partey",
-    status: "out",
-    detail: "Ruled out of the group stage, knee (sample entry)",
-    reportedAt: "2026-06-07",
-  },
-];
-
 function freshState(): TournamentState {
   return {
     version: 1,
     elo: Object.fromEntries(TEAMS.map((t) => [t.id, t.baseElo])),
     results: {},
-    injuries: SEED_INJURIES,
+    injuries: [],
     marketOdds: {},
   };
 }
@@ -52,6 +21,14 @@ export async function loadState(): Promise<TournamentState> {
   const stored = await getStorage().load();
   if (stored) {
     stored.marketOdds ??= {}; // migrate pre-market states
+    // drop the illustrative sample injuries earlier versions seeded — only
+    // real squad news (POST /api/injuries) should move ratings
+    const real = stored.injuries.filter((i) => !i.id.startsWith("seed-"));
+    if (real.length !== stored.injuries.length) {
+      stored.injuries = real;
+      stored.version++;
+      await getStorage().save(stored);
+    }
     return stored;
   }
   const state = freshState();
@@ -64,6 +41,10 @@ export async function loadState(): Promise<TournamentState> {
 let cached: Predictions | null = null;
 
 export async function getPredictions(): Promise<Predictions> {
+  // lazy auto-sync (dynamic import: sync.ts imports recordResult from here)
+  const { maybeSyncResults } = await import("./sync");
+  await maybeSyncResults();
+
   const state = await loadState();
   if (!cached || cached.stateVersion !== state.version) {
     cached = runSimulation(state);
@@ -144,6 +125,32 @@ export async function removeInjury(id: string): Promise<TournamentState> {
   state.version++;
   await getStorage().save(state);
   return state;
+}
+
+/**
+ * Replace all feed-sourced injuries (id prefix "feed-") with the feed's
+ * current list, leaving manual flags untouched. Recoveries clear
+ * automatically because absent players simply stop being in the list.
+ * Bumps the version (→ re-simulation) only when something changed; always
+ * records the sync time for throttling.
+ */
+export async function replaceFeedInjuries(feed: Injury[]): Promise<boolean> {
+  const state = await loadState();
+  const manual = state.injuries.filter((i) => !i.id.startsWith("feed-"));
+  const current = state.injuries.filter((i) => i.id.startsWith("feed-"));
+
+  const key = (i: Injury) => `${i.id}|${i.status}|${i.detail ?? ""}`;
+  const changed =
+    current.length !== feed.length ||
+    new Set([...current.map(key), ...feed.map(key)]).size !== feed.length;
+
+  if (changed) {
+    state.injuries = [...manual, ...feed];
+    state.version++;
+  }
+  state.lastInjurySyncAt = new Date().toISOString();
+  await getStorage().save(state);
+  return changed;
 }
 
 export async function setMarketOdds(input: {

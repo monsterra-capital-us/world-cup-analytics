@@ -1,4 +1,5 @@
 import { loadState } from "@/lib/store";
+import { maybeSyncResults } from "@/lib/sync";
 import { evaluate, AggregateScore } from "@/lib/model/evaluate";
 import { FIXTURE_BY_ID } from "@/data/fixtures";
 import { pct } from "@/lib/format";
@@ -13,6 +14,7 @@ const SOURCE_LABEL: Record<string, string> = {
 };
 
 export default async function ModelPage() {
+  await maybeSyncResults();
   const state = await loadState();
   const { rows, overall, marketSubset } = evaluate(Object.values(state.results));
 
@@ -24,8 +26,8 @@ export default async function ModelPage() {
           Every forecast is frozen the moment a result is recorded, then scored
           out-of-sample. Brier, log loss and RPS are all{" "}
           <span className="text-foreground">lower-is-better</span>. The market
-          rows benchmark against sportsbook odds (enter them per fixture in the
-          Data Manager — sharp closing lines like Pinnacle&apos;s are the
+          rows benchmark against sportsbook odds (POST them per fixture to
+          /api/odds — sharp closing lines like Pinnacle&apos;s are the
           toughest public baseline; matching them is the realistic target, and
           the published blend is designed to be at least as sharp as either
           input alone.
@@ -51,7 +53,7 @@ export default async function ModelPage() {
               hint={
                 marketSubset.length
                   ? "Apples-to-apples: every source scored on the same matches"
-                  : "Enter pre-match odds in the Data Manager to unlock this comparison"
+                  : "POST pre-match odds to /api/odds to unlock this comparison"
               }
               scores={marketSubset}
             />
@@ -65,7 +67,7 @@ export default async function ModelPage() {
             <div className="overflow-x-auto px-5 pb-5">
               <table className="w-full min-w-[560px] text-sm">
                 <thead>
-                  <tr className="text-left text-xs uppercase tracking-wider text-muted">
+                  <tr className="text-left font-mono text-[10px] uppercase tracking-[0.18em] text-muted">
                     <th className="pb-2 font-medium">Match</th>
                     <th className="pb-2 text-center font-medium">Score</th>
                     <th className="pb-2 text-right font-medium">Model</th>
@@ -133,13 +135,13 @@ function ScoreCard({
   return (
     <Card>
       <SectionTitle title={title} hint={hint} />
-      <div className="px-5 pb-5">
+      <div className="overflow-x-auto px-5 pb-5">
         {scores.length === 0 ? (
           <p className="py-2 text-sm text-muted">No data yet.</p>
         ) : (
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[420px] text-sm">
             <thead>
-              <tr className="text-right text-xs uppercase tracking-wider text-muted">
+              <tr className="text-right font-mono text-[10px] uppercase tracking-[0.18em] text-muted">
                 <th className="pb-2 text-left font-medium">Source</th>
                 <th className="pb-2 font-medium">N</th>
                 <th className="pb-2 font-medium">Brier</th>
@@ -179,7 +181,7 @@ function ProbCell({ p }: { p?: number }) {
     <td className="py-2 text-right tabular-nums">
       <span
         className="inline-block min-w-14 rounded px-1.5 py-0.5"
-        style={{ backgroundColor: `rgba(16, 185, 129, ${p * 0.4})` }}
+        style={{ backgroundColor: `rgba(46, 119, 255, ${p * 0.45})` }}
       >
         {pct(p)}
       </span>

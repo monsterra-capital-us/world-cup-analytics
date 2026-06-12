@@ -72,7 +72,7 @@ export default async function Dashboard() {
                   <span className="w-5 text-right text-xs tabular-nums text-muted">
                     {i + 1}
                   </span>
-                  <span className="w-44 shrink-0 truncate text-sm">
+                  <span className="w-28 shrink-0 truncate text-sm sm:w-44">
                     <TeamChip teamId={o.teamId} bold={i < 3} />
                   </span>
                   <div className="h-3 flex-1 overflow-hidden rounded-full bg-surface-2">
@@ -85,9 +85,9 @@ export default async function Dashboard() {
                     {pct(o.pChampion)}
                   </span>
                   <span
-                    className={`w-12 text-right text-[11px] tabular-nums ${
+                    className={`hidden w-12 text-right text-[11px] tabular-nums sm:block ${
                       eloDelta > 0.5
-                        ? "text-accent"
+                        ? "text-success"
                         : eloDelta < -0.5
                           ? "text-danger"
                           : "text-muted"
@@ -107,16 +107,11 @@ export default async function Dashboard() {
           <SectionTitle
             title="Injury watch"
             hint="Each flag lowers the team's effective rating in every forecast"
-            right={
-              <Link href="/admin" className="text-xs text-accent hover:underline">
-                Manage →
-              </Link>
-            }
           />
           <div className="space-y-2 px-5 pb-5">
             {state.injuries.length === 0 && (
               <p className="py-4 text-sm text-muted">
-                No active injury flags. Add squad news in the Data Manager.
+                No active injury flags. Squad news arrives via POST /api/injuries.
               </p>
             )}
             {state.injuries.map((inj) => (
@@ -207,8 +202,8 @@ export default async function Dashboard() {
           <div className="space-y-1 px-3 pb-4">
             {recent.length === 0 && (
               <p className="px-3 py-4 text-sm text-muted">
-                No results yet — the tournament starts today. Record final scores
-                in the Data Manager (or POST to /api/results) as matches finish.
+                No results yet. Final scores sync in automatically once matches
+                finish (or can be POSTed to /api/results).
               </p>
             )}
             {recent.map((r) => {
@@ -249,7 +244,7 @@ export default async function Dashboard() {
         <div className="overflow-x-auto px-5 pb-5">
           <table className="w-full min-w-[640px] text-sm">
             <thead>
-              <tr className="text-left text-xs uppercase tracking-wider text-muted">
+              <tr className="text-left font-mono text-[10px] uppercase tracking-[0.18em] text-muted">
                 <th className="pb-2 font-medium">Team</th>
                 <th className="pb-2 text-right font-medium">Exp. pts</th>
                 <th className="pb-2 text-right font-medium">R32</th>
@@ -290,18 +285,18 @@ export default async function Dashboard() {
 function Stat({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <Card className="px-4 py-3">
-      <p className="text-[11px] uppercase tracking-wider text-muted">{label}</p>
+      <p className="font-mono text-[9px] font-medium uppercase tracking-[0.2em] text-muted">{label}</p>
       <div className="mt-1">{children}</div>
     </Card>
   );
 }
 
 function CellProb({ p }: { p: number }) {
-  const alpha = Math.min(0.85, p) * 0.35;
+  const alpha = Math.min(0.85, p) * 0.4;
   return (
     <span
       className="inline-block min-w-14 rounded px-1.5 py-0.5"
-      style={{ backgroundColor: `rgba(16, 185, 129, ${alpha})` }}
+      style={{ backgroundColor: `rgba(46, 119, 255, ${alpha})` }}
     >
       {pct(p)}
     </span>

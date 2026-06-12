@@ -4,6 +4,7 @@ import { getPredictions, loadState } from "@/lib/store";
 import { FIXTURE_BY_ID } from "@/data/fixtures";
 import { TEAM_BY_ID } from "@/data/teams";
 import { kickoffLabel, pct, signed } from "@/lib/format";
+import { getLineups, TeamLineup } from "@/lib/lineups";
 import { Card, InjuryBadge, SectionTitle, TeamChip, WdlBar } from "@/components/ui";
 import { TeamFactors } from "@/lib/types";
 
@@ -22,6 +23,7 @@ export default async function MatchPage({
 
   const predictions = await getPredictions();
   const state = await loadState();
+  const lineups = await getLineups(fixture);
   const mp = predictions.matchPredictions[id];
   const result = state.results[id];
   const home = TEAM_BY_ID[fixture.home];
@@ -35,23 +37,23 @@ export default async function MatchPage({
       </Link>
 
       {/* header */}
-      <Card className="px-6 py-5">
-        <p className="text-xs uppercase tracking-wider text-muted">
+      <Card className="px-4 py-4 sm:px-6 sm:py-5">
+        <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted">
           Group {fixture.group} · Matchday {fixture.matchday} · {fixture.venue} ·{" "}
           {kickoffLabel(fixture.kickoff)}
         </p>
-        <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-2">
-          <span className="text-2xl font-bold">
+        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 sm:gap-x-6">
+          <span className="text-xl font-bold sm:text-2xl">
             {home.flag} {home.name}
           </span>
           {result ? (
-            <span className="rounded-xl bg-surface-2 px-4 py-1.5 text-2xl font-black tabular-nums">
+            <span className="rounded-xl bg-surface-2 px-3 py-1 text-xl font-black tabular-nums sm:px-4 sm:py-1.5 sm:text-2xl">
               {result.homeGoals}–{result.awayGoals}
             </span>
           ) : (
-            <span className="text-xl text-muted">vs</span>
+            <span className="text-lg text-muted sm:text-xl">vs</span>
           )}
-          <span className="text-2xl font-bold">
+          <span className="text-xl font-bold sm:text-2xl">
             {away.flag} {away.name}
           </span>
         </div>
@@ -164,6 +166,53 @@ export default async function MatchPage({
           </div>
         </Card>
       </div>
+
+      {/* lineups */}
+      <Card>
+        <SectionTitle
+          title="Lineups"
+          hint="Starting XI and bench from the lineups feed"
+        />
+        {lineups.available ? (
+          <div className="grid gap-6 px-5 pb-5 sm:grid-cols-2">
+            {[lineups.home!, lineups.away!].map((team) => (
+              <LineupBlock key={team.teamName} lineup={team} />
+            ))}
+          </div>
+        ) : (
+          <p className="px-5 pb-5 text-sm text-muted">{lineups.reason}</p>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+function LineupBlock({ lineup }: { lineup: TeamLineup }) {
+  return (
+    <div className="rounded-xl bg-surface-2/60 p-4">
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="text-sm font-semibold">{lineup.teamName}</span>
+        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted">
+          {lineup.formation ?? ""}
+        </span>
+      </div>
+      {lineup.coach && (
+        <p className="mt-1 text-xs text-muted">Coach: {lineup.coach}</p>
+      )}
+      <ol className="mt-3 space-y-1 text-xs">
+        {lineup.starting.map((p) => (
+          <li key={`${p.number}-${p.name}`} className="flex items-center gap-2">
+            <span className="w-5 text-right tabular-nums text-muted">{p.number ?? ""}</span>
+            <span className="font-medium">{p.name}</span>
+            {p.position && <span className="text-muted">{p.position}</span>}
+          </li>
+        ))}
+      </ol>
+      {lineup.bench.length > 0 && (
+        <p className="mt-3 border-t border-edge/60 pt-3 text-xs text-muted">
+          Bench: {lineup.bench.map((p) => p.name).join(", ")}
+        </p>
+      )}
     </div>
   );
 }
@@ -177,8 +226,8 @@ function Row({ a, row, peak }: { a: number; row: number[]; peak: number }) {
           key={b}
           className="grid aspect-[5/3] place-items-center rounded-md text-[11px] tabular-nums"
           style={{
-            backgroundColor: `rgba(16, 185, 129, ${(p / peak) * 0.75 + 0.03})`,
-            color: p / peak > 0.55 ? "#04110b" : undefined,
+            backgroundColor: `rgba(46, 119, 255, ${(p / peak) * 0.8 + 0.03})`,
+            color: p / peak > 0.55 ? "#fcfbf6" : undefined,
           }}
           title={`P(${a}–${b}) = ${pct(p, 2)}`}
         >
@@ -205,7 +254,13 @@ function FactorBlock({ factors }: { factors: TeamFactors }) {
         <FactorRow
           label="In-tournament form (Elo Δ)"
           value={signed(factors.currentElo - factors.baseElo, 1)}
-          tone={factors.currentElo > factors.baseElo ? "good" : factors.currentElo < factors.baseElo ? "bad" : undefined}
+          tone={
+            factors.currentElo > factors.baseElo
+              ? "good"
+              : factors.currentElo < factors.baseElo
+                ? "bad"
+                : undefined
+          }
         />
         <FactorRow
           label="Injury penalty"
@@ -247,7 +302,7 @@ function FactorRow({
     <div className="flex justify-between">
       <dt className="text-muted">{label}</dt>
       <dd
-        className={`tabular-nums ${tone === "good" ? "text-accent" : tone === "bad" ? "text-danger" : ""}`}
+        className={`tabular-nums ${tone === "good" ? "text-success" : tone === "bad" ? "text-danger" : ""}`}
       >
         {value}
       </dd>
