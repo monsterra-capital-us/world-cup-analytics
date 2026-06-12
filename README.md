@@ -47,6 +47,7 @@ recomputes everything each time a finished match is recorded.
 | Market ensemble | Decimal odds → de-vig (proportional) → 70/30 market/model blend; score matrix rescaled to blended outcome masses, preserving scoreline shape |
 | Tournament | Monte Carlo: simulate remaining group games, rank groups & best thirds (pts / GD / GF), fixed R32 bracket template, knockouts with strength-weighted extra-time/penalty resolution |
 | Evaluation | Pre-match forecast snapshots scored out-of-sample: multiclass Brier, log loss, ranked probability score |
+| Self-calibration | Goal-rate multiplier re-fit after every result from predicted-vs-actual goal totals (shrunk toward 1.0 by a 10-match prior, capped ±25%); per-match deviations charted on the Model page |
 
 Deterministic seeded RNG: the same state always produces the same odds.
 
@@ -100,10 +101,6 @@ fit again — while manually POSTed flags are never touched.
   or a plain `[{ "team", "player", "status", "detail" }]` array.
 - `GET /api/sync` — trigger both checks manually and see what changed
   (`?force=1` queries the feeds unconditionally).
-
-Match pages additionally show starting lineups (XI, formation, coach,
-bench) once `API_FOOTBALL_KEY` is set — the same key powers both injuries
-and lineups. Lineups are typically published ~40 minutes before kickoff.
 
 `GET /api/schedule` compares the local fixture calendar against the
 results feed's official match list and reports any drift.

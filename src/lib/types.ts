@@ -48,6 +48,11 @@ export interface ForecastSnapshot {
   model: OutcomeProbs;
   market?: OutcomeProbs;
   blend: OutcomeProbs;
+  /** pre-match expected goals — fuels the score-deviation chart + calibration */
+  expHomeGoals?: number;
+  expAwayGoals?: number;
+  /** pre-match most likely scoreline */
+  topScore?: { home: number; away: number; p: number };
 }
 
 export interface OutcomeProbs {

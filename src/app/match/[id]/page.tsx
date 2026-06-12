@@ -4,7 +4,6 @@ import { getPredictions, loadState } from "@/lib/store";
 import { FIXTURE_BY_ID } from "@/data/fixtures";
 import { TEAM_BY_ID } from "@/data/teams";
 import { kickoffLabel, pct, signed } from "@/lib/format";
-import { getLineups, TeamLineup } from "@/lib/lineups";
 import { Card, InjuryBadge, SectionTitle, TeamChip, WdlBar } from "@/components/ui";
 import { TeamFactors } from "@/lib/types";
 
@@ -23,7 +22,6 @@ export default async function MatchPage({
 
   const predictions = await getPredictions();
   const state = await loadState();
-  const lineups = await getLineups(fixture);
   const mp = predictions.matchPredictions[id];
   const result = state.results[id];
   const home = TEAM_BY_ID[fixture.home];
@@ -166,53 +164,6 @@ export default async function MatchPage({
           </div>
         </Card>
       </div>
-
-      {/* lineups */}
-      <Card>
-        <SectionTitle
-          title="Lineups"
-          hint="Starting XI and bench from the lineups feed"
-        />
-        {lineups.available ? (
-          <div className="grid gap-6 px-5 pb-5 sm:grid-cols-2">
-            {[lineups.home!, lineups.away!].map((team) => (
-              <LineupBlock key={team.teamName} lineup={team} />
-            ))}
-          </div>
-        ) : (
-          <p className="px-5 pb-5 text-sm text-muted">{lineups.reason}</p>
-        )}
-      </Card>
-    </div>
-  );
-}
-
-function LineupBlock({ lineup }: { lineup: TeamLineup }) {
-  return (
-    <div className="rounded-xl bg-surface-2/60 p-4">
-      <div className="flex items-baseline justify-between gap-2">
-        <span className="text-sm font-semibold">{lineup.teamName}</span>
-        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted">
-          {lineup.formation ?? ""}
-        </span>
-      </div>
-      {lineup.coach && (
-        <p className="mt-1 text-xs text-muted">Coach: {lineup.coach}</p>
-      )}
-      <ol className="mt-3 space-y-1 text-xs">
-        {lineup.starting.map((p) => (
-          <li key={`${p.number}-${p.name}`} className="flex items-center gap-2">
-            <span className="w-5 text-right tabular-nums text-muted">{p.number ?? ""}</span>
-            <span className="font-medium">{p.name}</span>
-            {p.position && <span className="text-muted">{p.position}</span>}
-          </li>
-        ))}
-      </ol>
-      {lineup.bench.length > 0 && (
-        <p className="mt-3 border-t border-edge/60 pt-3 text-xs text-muted">
-          Bench: {lineup.bench.map((p) => p.name).join(", ")}
-        </p>
-      )}
     </div>
   );
 }

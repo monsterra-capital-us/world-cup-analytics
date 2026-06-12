@@ -3,6 +3,7 @@ import { TEAM_BY_ID, TEAMS } from "@/data/teams";
 import { FIXTURE_BY_ID } from "@/data/fixtures";
 import { eloUpdate } from "./model/elo";
 import { injuryPenalty } from "./model/strength";
+import { topScorelines } from "./model/poisson";
 import { predictFixture, runSimulation } from "./model/simulate";
 import { validateOdds } from "./model/market";
 import { getStorage } from "./storage";
@@ -21,11 +22,30 @@ export async function loadState(): Promise<TournamentState> {
   const stored = await getStorage().load();
   if (stored) {
     stored.marketOdds ??= {}; // migrate pre-market states
+    let changed = false;
+
     // drop the illustrative sample injuries earlier versions seeded — only
     // real squad news (POST /api/injuries) should move ratings
     const real = stored.injuries.filter((i) => !i.id.startsWith("seed-"));
     if (real.length !== stored.injuries.length) {
       stored.injuries = real;
+      changed = true;
+    }
+
+    // backfill score expectations for results recorded before snapshots
+    // stored them. Only safe for matchday-1 fixtures: their pre-match state
+    // is exactly the pristine seed state (base Elo, no injuries, no odds).
+    for (const r of Object.values(stored.results)) {
+      if (!r.forecast || r.forecast.expHomeGoals != null) continue;
+      if (FIXTURE_BY_ID[r.fixtureId]?.matchday !== 1) continue;
+      const { matrix, d } = predictFixture(r.fixtureId, freshState());
+      r.forecast.expHomeGoals = d.lambdaA;
+      r.forecast.expAwayGoals = d.lambdaB;
+      r.forecast.topScore = topScorelines(matrix, 1)[0];
+      changed = true;
+    }
+
+    if (changed) {
       stored.version++;
       await getStorage().save(stored);
     }
@@ -70,13 +90,20 @@ export async function recordResult(
   if (prior) throw new Error(`Result already recorded for ${fixtureId} (${prior.homeGoals}-${prior.awayGoals})`);
 
   // freeze the pre-match forecast before Elo moves, for honest evaluation
-  const { model, market, blend } = predictFixture(fixtureId, state);
+  const { model, market, blend, matrix, d } = predictFixture(fixtureId, state);
   const result: MatchResult = {
     fixtureId,
     homeGoals,
     awayGoals,
     recordedAt: new Date().toISOString(),
-    forecast: { model, market, blend },
+    forecast: {
+      model,
+      market,
+      blend,
+      expHomeGoals: d.lambdaA,
+      expAwayGoals: d.lambdaB,
+      topScore: topScorelines(matrix, 1)[0],
+    },
   };
   state.results[fixtureId] = result;
 
