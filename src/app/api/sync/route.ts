@@ -6,12 +6,14 @@ export const dynamic = "force-dynamic";
 /**
  * GET/POST /api/sync
  *
- * Pulls finished matches from the configured results feed and records any
- * that are missing (see src/lib/sync.ts for configuration). Pages also
- * trigger this lazily, so the cron/manual call is just a backstop.
+ * Records any finished matches missing from the state. The feed is only
+ * queried when a fixture should have ended without a result, so this is
+ * safe to poll continuously (the Vercel cron hits it every 10 minutes);
+ * add ?force=1 to query the feed unconditionally.
  */
-export async function GET() {
-  const summary = await syncResults();
+export async function GET(req: Request) {
+  const force = new URL(req.url).searchParams.get("force") === "1";
+  const summary = await syncResults({ force });
   return NextResponse.json(summary, { status: summary.ok ? 200 : 503 });
 }
 

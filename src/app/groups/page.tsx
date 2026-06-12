@@ -36,7 +36,7 @@ export default async function GroupsPage() {
               <div className="px-4 pb-4">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-right text-[11px] uppercase tracking-wider text-muted">
+                    <tr className="text-right font-mono text-[9px] uppercase tracking-[0.16em] text-muted">
                       <th className="pb-1.5 text-left font-medium">Team</th>
                       <th className="pb-1.5 font-medium">P</th>
                       <th className="pb-1.5 font-medium">GD</th>

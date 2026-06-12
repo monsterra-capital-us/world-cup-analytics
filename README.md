@@ -79,16 +79,17 @@ hosts with a persistent disk.
 
 ## Updating data after each match
 
-Results update **automatically**: when a configured feed reports a finished
-match, the app records it on the next page read (throttled to one feed call
-per 5 minutes, only when a fixture should have ended) and a daily cron
-(`vercel.json` → `/api/sync`) backstops quiet periods.
+Results update **automatically, around the clock**: a Vercel cron polls
+`/api/sync` every 10 minutes and page reads trigger the same check, but the
+feed is only queried — and the model only recomputed — when a fixture
+should have ended without a recorded result.
 
 - `FOOTBALL_DATA_API_KEY` — free key from football-data.org (the default
   feed is their FIFA World Cup endpoint).
 - `RESULTS_FEED_URL` — optional override; any endpoint returning the same
   match-list shape works.
-- `GET /api/sync` — trigger a sync manually and see what was recorded.
+- `GET /api/sync` — trigger the check manually and see what was recorded
+  (`?force=1` queries the feed unconditionally).
 
 Everything below remains available for webhooks, corrections on a fresh
 state, or running without a feed:
@@ -133,8 +134,8 @@ problem in sports forecasting. This app takes the credible route instead:
 ## Data notes & caveats
 
 - Groups reflect the real draw of 5 December 2025; pre-tournament Elo
-  ratings, key-player importance weights and the three seeded injury flags
-  are editable estimates (`src/data/teams.ts`, `src/lib/store.ts`).
+  ratings and key-player importance weights are editable estimates
+  (`src/data/teams.ts`).
 - Group-stage kickoff slots and venue assignments approximate the real
   calendar windows; edit `src/data/fixtures.ts` to match the official
   schedule exactly.

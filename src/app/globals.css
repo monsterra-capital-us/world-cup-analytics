@@ -1,16 +1,29 @@
 @import "tailwindcss";
 
+/*
+ * Monsterra Capital brand (from the Mobile UI kit):
+ * capital blue scale on deep-navy ink, bone foregrounds, slate neutrals,
+ * IBM Plex Mono micro-labels, hairlines over shadows.
+ */
 :root {
-  --background: #070d17;
-  --surface: #0d1626;
-  --surface-2: #131f33;
-  --border: #1e2c45;
-  --foreground: #e8eef9;
-  --muted: #8294b3;
-  --accent: #34d399;
-  --accent-dim: #10b981;
-  --gold: #fbbf24;
-  --danger: #f87171;
+  --capital-300: #5c95ff;
+  --capital-400: #2e77ff;
+  --capital-500: #0059ff;
+  --capital-900: #001947;
+  --capital-950: #00091a;
+
+  --background: var(--capital-950);
+  --surface: #010f2c;
+  --surface-2: #071a40;
+  --border: rgba(255, 255, 255, 0.1);
+  --foreground: #fcfbf6; /* bone-50 */
+  --muted: #9ba3bd; /* slate-400 */
+  --accent: var(--capital-300);
+  --accent-dim: var(--capital-500);
+  --success: #16a373;
+  --gold: #e89b1f; /* kit --warn */
+  --danger: #e04545;
+  --info: #4bb8f0;
 }
 
 @theme inline {
@@ -22,23 +35,41 @@
   --color-muted: var(--muted);
   --color-accent: var(--accent);
   --color-accent-dim: var(--accent-dim);
+  --color-success: var(--success);
   --color-gold: var(--gold);
   --color-danger: var(--danger);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-info: var(--info);
+  --font-sans: var(--font-body);
+  --font-head: var(--font-head);
+  --font-mono: var(--font-plex-mono);
+  /* Monsterra radii: tighter than Tailwind defaults (kit: 4/8/14) */
+  --radius-lg: 8px;
+  --radius-xl: 10px;
+  --radius-2xl: 14px;
 }
 
 body {
   background: var(--background);
   background-image:
-    radial-gradient(1100px 500px at 80% -10%, rgba(16, 185, 129, 0.07), transparent),
-    radial-gradient(900px 450px at 0% 0%, rgba(59, 130, 246, 0.06), transparent);
+    radial-gradient(1100px 500px at 80% -10%, rgba(0, 89, 255, 0.12), transparent),
+    radial-gradient(900px 450px at 0% 0%, rgba(75, 184, 240, 0.05), transparent);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-head), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* kit .tnum — numerals read as data, in Plex Mono */
+.tabular-nums {
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
 }
 
 ::selection {
-  background: rgba(52, 211, 153, 0.3);
+  background: rgba(0, 89, 255, 0.45);
 }
 
 /* horizontally scrollable rows (mobile nav) without a visible scrollbar */

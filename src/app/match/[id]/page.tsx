@@ -36,7 +36,7 @@ export default async function MatchPage({
 
       {/* header */}
       <Card className="px-4 py-4 sm:px-6 sm:py-5">
-        <p className="text-xs uppercase tracking-wider text-muted">
+        <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted">
           Group {fixture.group} · Matchday {fixture.matchday} · {fixture.venue} ·{" "}
           {kickoffLabel(fixture.kickoff)}
         </p>
@@ -177,8 +177,8 @@ function Row({ a, row, peak }: { a: number; row: number[]; peak: number }) {
           key={b}
           className="grid aspect-[5/3] place-items-center rounded-md text-[11px] tabular-nums"
           style={{
-            backgroundColor: `rgba(16, 185, 129, ${(p / peak) * 0.75 + 0.03})`,
-            color: p / peak > 0.55 ? "#04110b" : undefined,
+            backgroundColor: `rgba(46, 119, 255, ${(p / peak) * 0.8 + 0.03})`,
+            color: p / peak > 0.55 ? "#fcfbf6" : undefined,
           }}
           title={`P(${a}–${b}) = ${pct(p, 2)}`}
         >
@@ -205,7 +205,13 @@ function FactorBlock({ factors }: { factors: TeamFactors }) {
         <FactorRow
           label="In-tournament form (Elo Δ)"
           value={signed(factors.currentElo - factors.baseElo, 1)}
-          tone={factors.currentElo > factors.baseElo ? "good" : factors.currentElo < factors.baseElo ? "bad" : undefined}
+          tone={
+            factors.currentElo > factors.baseElo
+              ? "good"
+              : factors.currentElo < factors.baseElo
+                ? "bad"
+                : undefined
+          }
         />
         <FactorRow
           label="Injury penalty"
@@ -247,7 +253,7 @@ function FactorRow({
     <div className="flex justify-between">
       <dt className="text-muted">{label}</dt>
       <dd
-        className={`tabular-nums ${tone === "good" ? "text-accent" : tone === "bad" ? "text-danger" : ""}`}
+        className={`tabular-nums ${tone === "good" ? "text-success" : tone === "bad" ? "text-danger" : ""}`}
       >
         {value}
       </dd>

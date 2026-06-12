@@ -30,8 +30,11 @@ export function SectionTitle({
   return (
     <div className="flex items-baseline justify-between gap-3 px-5 pt-4 pb-3">
       <div>
-        <h2 className="text-sm font-semibold tracking-wide">{title}</h2>
-        {hint && <p className="mt-0.5 text-xs text-muted">{hint}</p>}
+        {/* kit .eyebrow — mono micro-label in capital blue */}
+        <h2 className="font-mono text-[10px] font-medium uppercase tracking-[0.22em] text-accent">
+          {title}
+        </h2>
+        {hint && <p className="mt-1.5 text-xs text-muted">{hint}</p>}
       </div>
       {right}
     </div>
@@ -79,14 +82,14 @@ export function WdlBar({
   return (
     <div className={className}>
       <div className="flex h-2 w-full overflow-hidden rounded-full bg-surface-2">
-        <div className="bg-accent" style={{ width: `${pHome * 100}%` }} />
+        <div className="bg-accent-dim" style={{ width: `${pHome * 100}%` }} />
         <div className="bg-slate-500/70" style={{ width: `${pDraw * 100}%` }} />
-        <div className="bg-sky-400" style={{ width: `${pAway * 100}%` }} />
+        <div className="bg-info" style={{ width: `${pAway * 100}%` }} />
       </div>
       <div className="mt-1 flex justify-between text-[11px] tabular-nums text-muted">
         <span className="text-accent">{pct(pHome)}</span>
         <span>draw {pct(pDraw)}</span>
-        <span className="text-sky-400">{pct(pAway)}</span>
+        <span className="text-info">{pct(pAway)}</span>
       </div>
     </div>
   );
@@ -95,13 +98,13 @@ export function WdlBar({
 export const STATUS_STYLE: Record<string, string> = {
   out: "bg-danger/15 text-danger",
   doubtful: "bg-gold/15 text-gold",
-  returning: "bg-sky-400/15 text-sky-400",
+  returning: "bg-info/15 text-info",
 };
 
 export function InjuryBadge({ status }: { status: string }) {
   return (
     <span
-      className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${STATUS_STYLE[status] ?? "bg-surface-2 text-muted"}`}
+      className={`rounded-full px-2 py-0.5 font-mono text-[9px] font-medium uppercase tracking-[0.14em] ${STATUS_STYLE[status] ?? "bg-surface-2 text-muted"}`}
     >
       {status}
     </span>

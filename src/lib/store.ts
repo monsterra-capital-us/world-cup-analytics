@@ -7,43 +7,12 @@ import { predictFixture, runSimulation } from "./model/simulate";
 import { validateOdds } from "./model/market";
 import { getStorage } from "./storage";
 
-/**
- * Illustrative seed entries so the dashboard demonstrates injury impact
- * out of the box — replace with real squad news via POST /api/injuries.
- */
-const SEED_INJURIES: Injury[] = [
-  {
-    id: "seed-1",
-    teamId: "FRA",
-    player: "William Saliba",
-    status: "doubtful",
-    detail: "Hamstring tightness in final training (sample entry)",
-    reportedAt: "2026-06-09",
-  },
-  {
-    id: "seed-2",
-    teamId: "BEL",
-    player: "Kevin De Bruyne",
-    status: "returning",
-    detail: "Back from calf injury, short of match fitness (sample entry)",
-    reportedAt: "2026-06-08",
-  },
-  {
-    id: "seed-3",
-    teamId: "GHA",
-    player: "Thomas Partey",
-    status: "out",
-    detail: "Ruled out of the group stage, knee (sample entry)",
-    reportedAt: "2026-06-07",
-  },
-];
-
 function freshState(): TournamentState {
   return {
     version: 1,
     elo: Object.fromEntries(TEAMS.map((t) => [t.id, t.baseElo])),
     results: {},
-    injuries: SEED_INJURIES,
+    injuries: [],
     marketOdds: {},
   };
 }
@@ -52,6 +21,14 @@ export async function loadState(): Promise<TournamentState> {
   const stored = await getStorage().load();
   if (stored) {
     stored.marketOdds ??= {}; // migrate pre-market states
+    // drop the illustrative sample injuries earlier versions seeded — only
+    // real squad news (POST /api/injuries) should move ratings
+    const real = stored.injuries.filter((i) => !i.id.startsWith("seed-"));
+    if (real.length !== stored.injuries.length) {
+      stored.injuries = real;
+      stored.version++;
+      await getStorage().save(stored);
+    }
     return stored;
   }
   const state = freshState();

@@ -48,6 +48,8 @@ export interface SyncSummary {
   recorded: string[];
   /** finished feed matches that could not be mapped to a fixture */
   unmatched: string[];
+  /** why the feed wasn't queried, when it wasn't */
+  skipped?: string;
   error?: string;
 }
 
@@ -103,8 +105,13 @@ function feedConfigured(): boolean {
   return Boolean(process.env.FOOTBALL_DATA_API_KEY || process.env.RESULTS_FEED_URL);
 }
 
-/** Fetch the feed once and record every finished, not-yet-recorded match. */
-export async function syncResults(): Promise<SyncSummary> {
+/**
+ * Record every finished, not-yet-recorded match. The feed is only queried
+ * when a fixture should have ended but has no result — so the system can be
+ * polled around the clock and still only does work when a match is done.
+ * Pass force to query the feed unconditionally.
+ */
+export async function syncResults(opts: { force?: boolean } = {}): Promise<SyncSummary> {
   if (!feedConfigured()) {
     return {
       ok: false,
@@ -114,6 +121,23 @@ export async function syncResults(): Promise<SyncSummary> {
       error:
         "No results feed configured — set FOOTBALL_DATA_API_KEY (free at football-data.org) or RESULTS_FEED_URL.",
     };
+  }
+
+  const state = await loadState();
+  if (!opts.force) {
+    const now = Date.now();
+    const due = FIXTURES.some(
+      (f) => !state.results[f.id] && now - Date.parse(f.kickoff) > MATCH_DURATION_MS,
+    );
+    if (!due) {
+      return {
+        ok: true,
+        configured: true,
+        recorded: [],
+        unmatched: [],
+        skipped: "no finished fixture awaiting a result — feed not queried",
+      };
+    }
   }
 
   const url = process.env.RESULTS_FEED_URL ?? DEFAULT_FEED_URL;
@@ -140,7 +164,6 @@ export async function syncResults(): Promise<SyncSummary> {
     };
   }
 
-  const state = await loadState();
   const recorded: string[] = [];
   const unmatched: string[] = [];
 
@@ -184,10 +207,10 @@ declare global {
 }
 
 /**
- * Cheap lazy trigger, called on prediction reads: hits the feed only when a
- * configured feed exists, a fixture should have finished but has no result,
- * and the last attempt was more than SYNC_INTERVAL_MS ago. Never throws —
- * pages keep serving on feed outages.
+ * Cheap lazy trigger, called on prediction reads. syncResults itself only
+ * queries the feed when a fixture should have finished but has no result;
+ * this adds a per-instance throttle. Never throws — pages keep serving on
+ * feed outages.
  */
 export async function maybeSyncResults(): Promise<void> {
   if (!feedConfigured()) return;
@@ -201,11 +224,7 @@ export async function maybeSyncResults(): Promise<void> {
   globalThis.__wc26LastSyncAttempt = now;
 
   try {
-    const state = await loadState();
-    const due = FIXTURES.some(
-      (f) => !state.results[f.id] && now - Date.parse(f.kickoff) > MATCH_DURATION_MS,
-    );
-    if (due) await syncResults();
+    await syncResults();
   } catch {
     // feed problems must never take down the site
   }

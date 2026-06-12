@@ -1,24 +1,35 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import Link from "next/link";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+// Monsterra brand fonts, self-hosted (extracted from the Mobile UI kit)
+const fontHead = localFont({
+  src: "../fonts/hanken-grotesk-latin.woff2",
+  weight: "100 900",
+  variable: "--font-head",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+const fontBody = localFont({
+  src: "../fonts/nunito-sans-latin.woff2",
+  weight: "100 900",
+  variable: "--font-body",
+});
+
+const fontMono = localFont({
+  src: [
+    { path: "../fonts/ibm-plex-mono-400-latin.woff2", weight: "400" },
+    { path: "../fonts/ibm-plex-mono-500-latin.woff2", weight: "500" },
+  ],
+  variable: "--font-plex-mono",
 });
 
 export const viewport: Viewport = {
-  themeColor: "#070d17",
+  themeColor: "#00091A",
 };
 
 export const metadata: Metadata = {
-  title: "WC26 Analytics — World Cup 2026 Predictions",
+  title: "WC26 Analytics — Monsterra Capital",
   description:
     "Live tournament predictions for the FIFA World Cup 2026: title odds, score forecasts and injury-adjusted team ratings, recomputed after every match.",
 };
@@ -30,24 +41,14 @@ const NAV = [
   { href: "/model", label: "Model" },
 ];
 
-/** Minimal mark: a circle and a centred pentagon — the ball reduced to geometry. */
-function Logo() {
+/** Monsterra mark — MC in Hanken Grotesk Black on capital blue. */
+function Mark() {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-      className="size-5 text-accent"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-    >
-      <circle cx="12" cy="12" r="9" />
-      <path
-        d="M12 8 L15.8 10.76 L14.35 15.24 L9.65 15.24 L8.2 10.76 Z"
-        fill="currentColor"
-        stroke="none"
-      />
-    </svg>
+    <span className="grid size-9 shrink-0 place-items-center rounded-[20%] bg-[#0059FF]">
+      <span className="font-head text-[15px] font-black tracking-[-0.06em] text-white">
+        MC
+      </span>
+    </span>
   );
 }
 
@@ -59,21 +60,19 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${fontHead.variable} ${fontBody.variable} ${fontMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <header className="sticky top-0 z-40 border-b border-edge bg-background/80 backdrop-blur">
           <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-0.5 px-4 py-2.5 sm:py-3 sm:px-6">
             <Link href="/" className="flex items-center gap-2.5">
-              <span className="grid size-9 place-items-center rounded-xl bg-accent-dim/15">
-                <Logo />
-              </span>
+              <Mark />
               <span className="leading-tight">
-                <span className="block text-sm font-bold tracking-wide">
+                <span className="block font-head text-sm font-extrabold tracking-[-0.02em]">
                   WC26 <span className="text-accent">Analytics</span>
                 </span>
-                <span className="block text-[11px] text-muted">
-                  FIFA World Cup 2026 · prediction engine
+                <span className="mt-0.5 block font-mono text-[9px] uppercase tracking-[0.22em] text-muted">
+                  Monsterra Capital · World Cup 2026
                 </span>
               </span>
             </Link>
@@ -93,9 +92,9 @@ export default function RootLayout({
         <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6">
           {children}
         </main>
-        <footer className="border-t border-edge px-4 py-5 text-center text-xs text-muted">
-          Injury-adjusted Elo · Dixon-Coles score model · Monte Carlo tournament
-          simulation — recomputed after every recorded match
+        <footer className="border-t border-edge px-4 py-5 text-center font-mono text-[10px] uppercase tracking-[0.14em] text-muted">
+          Injury-adjusted Elo · Dixon-Coles score model · Monte Carlo simulation
+          — recomputed after every match
         </footer>
       </body>
     </html>

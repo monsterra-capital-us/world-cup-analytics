@@ -87,7 +87,7 @@ export default async function Dashboard() {
                   <span
                     className={`hidden w-12 text-right text-[11px] tabular-nums sm:block ${
                       eloDelta > 0.5
-                        ? "text-accent"
+                        ? "text-success"
                         : eloDelta < -0.5
                           ? "text-danger"
                           : "text-muted"
@@ -244,7 +244,7 @@ export default async function Dashboard() {
         <div className="overflow-x-auto px-5 pb-5">
           <table className="w-full min-w-[640px] text-sm">
             <thead>
-              <tr className="text-left text-xs uppercase tracking-wider text-muted">
+              <tr className="text-left font-mono text-[10px] uppercase tracking-[0.18em] text-muted">
                 <th className="pb-2 font-medium">Team</th>
                 <th className="pb-2 text-right font-medium">Exp. pts</th>
                 <th className="pb-2 text-right font-medium">R32</th>
@@ -285,18 +285,18 @@ export default async function Dashboard() {
 function Stat({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <Card className="px-4 py-3">
-      <p className="text-[11px] uppercase tracking-wider text-muted">{label}</p>
+      <p className="font-mono text-[9px] font-medium uppercase tracking-[0.2em] text-muted">{label}</p>
       <div className="mt-1">{children}</div>
     </Card>
   );
 }
 
 function CellProb({ p }: { p: number }) {
-  const alpha = Math.min(0.85, p) * 0.35;
+  const alpha = Math.min(0.85, p) * 0.4;
   return (
     <span
       className="inline-block min-w-14 rounded px-1.5 py-0.5"
-      style={{ backgroundColor: `rgba(16, 185, 129, ${alpha})` }}
+      style={{ backgroundColor: `rgba(46, 119, 255, ${alpha})` }}
     >
       {pct(p)}
     </span>

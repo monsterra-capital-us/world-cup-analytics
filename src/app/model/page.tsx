@@ -67,7 +67,7 @@ export default async function ModelPage() {
             <div className="overflow-x-auto px-5 pb-5">
               <table className="w-full min-w-[560px] text-sm">
                 <thead>
-                  <tr className="text-left text-xs uppercase tracking-wider text-muted">
+                  <tr className="text-left font-mono text-[10px] uppercase tracking-[0.18em] text-muted">
                     <th className="pb-2 font-medium">Match</th>
                     <th className="pb-2 text-center font-medium">Score</th>
                     <th className="pb-2 text-right font-medium">Model</th>
@@ -141,7 +141,7 @@ function ScoreCard({
         ) : (
           <table className="w-full min-w-[420px] text-sm">
             <thead>
-              <tr className="text-right text-xs uppercase tracking-wider text-muted">
+              <tr className="text-right font-mono text-[10px] uppercase tracking-[0.18em] text-muted">
                 <th className="pb-2 text-left font-medium">Source</th>
                 <th className="pb-2 font-medium">N</th>
                 <th className="pb-2 font-medium">Brier</th>
@@ -181,7 +181,7 @@ function ProbCell({ p }: { p?: number }) {
     <td className="py-2 text-right tabular-nums">
       <span
         className="inline-block min-w-14 rounded px-1.5 py-0.5"
-        style={{ backgroundColor: `rgba(16, 185, 129, ${p * 0.4})` }}
+        style={{ backgroundColor: `rgba(46, 119, 255, ${p * 0.45})` }}
       >
         {pct(p)}
       </span>
