@@ -101,9 +101,9 @@ fit again — while manually POSTed flags are never touched.
 - `GET /api/sync` — trigger both checks manually and see what changed
   (`?force=1` queries the feeds unconditionally).
 
-Match pages additionally show starting lineups when a lineups feed is
-configured: set `WORLDCUP_API_KEY` (api.worldcupapi.com, `/fixtures` +
-`/lineups` endpoints; `WORLDCUP_API_BASE` overrides the host).
+Match pages additionally show starting lineups (XI, formation, coach,
+bench) once `API_FOOTBALL_KEY` is set — the same key powers both injuries
+and lineups. Lineups are typically published ~40 minutes before kickoff.
 
 `GET /api/schedule` compares the local fixture calendar against the
 results feed's official match list and reports any drift.
