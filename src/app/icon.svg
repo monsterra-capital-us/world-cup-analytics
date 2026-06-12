@@ -1,20 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 104 104">
   <rect width="104" height="104" rx="22" fill="#0059FF"/>
-  <g stroke="#fff" stroke-width="5.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
-    <!-- O's -->
-    <circle cx="22" cy="44" r="9.5"/>
-    <circle cx="35" cy="79" r="8"/>
-    <!-- X's -->
-    <path d="M40 10l9 9M49 10l-9 9"/>
-    <path d="M84 38l8 8M92 38l-8 8"/>
-    <path d="M10 62l8 8M18 62l-8 8"/>
-    <path d="M56 78l8 8M64 78l-8 8"/>
-    <!-- dashed pass to the ball -->
-    <path d="M42 71 L72 31" stroke-dasharray="7 8"/>
-    <!-- solid run arc with open arrowhead -->
-    <path d="M32 38 C 52 14, 76 26, 87 64"/>
-    <path d="M88.4 53.1 L88 66 L77.1 58.6"/>
+  <g stroke="#fff" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <!-- O -->
+    <circle cx="30" cy="72" r="11"/>
+    <!-- X -->
+    <path d="M24 22l12 12M36 22l-12 12"/>
+    <!-- dashed run from O toward the top right -->
+    <path d="M41 64 C 58 56, 70 44, 76 30" stroke-dasharray="8 9"/>
   </g>
-  <!-- ball -->
-  <circle cx="80" cy="20" r="7.5" fill="#fff"/>
+  <!-- ball at the end of the run -->
+  <circle cx="80" cy="21" r="8" fill="#fff"/>
 </svg>

@@ -92,6 +92,8 @@ export interface TournamentState {
   marketOdds: Record<string, MarketOdds>;
   /** last time the injuries feed was queried (throttles polling) */
   lastInjurySyncAt?: string;
+  /** last time the odds feed was queried (throttles polling) */
+  lastOddsSyncAt?: string;
 }
 
 export interface MatchPrediction {

@@ -24,7 +24,26 @@ export async function GET(req: Request) {
     );
   }
 
-  const matchId = new URL(req.url).searchParams.get("match");
+  // temporary diagnostic: list The Odds API soccer sport keys
+  const url = new URL(req.url);
+  if (url.searchParams.get("oddsdiag") === "sports") {
+    const oddsKey = process.env.ODDS_API_KEY;
+    if (!oddsKey) {
+      return NextResponse.json({ ok: false, error: "ODDS_API_KEY not set" }, { status: 503 });
+    }
+    const r = await fetch(`https://api.the-odds-api.com/v4/sports?apiKey=${oddsKey}&all=true`, {
+      cache: "no-store",
+    });
+    const body = await r.json();
+    const soccer = Array.isArray(body)
+      ? body
+          .filter((s: any) => /soccer/i.test(s?.key ?? ""))
+          .map((s: any) => ({ key: s.key, title: s.title, active: s.active }))
+      : body;
+    return NextResponse.json({ ok: r.ok, status: r.status, soccer });
+  }
+
+  const matchId = url.searchParams.get("match");
   if (matchId) {
     const res = await fetch(`https://api.football-data.org/v4/matches/${encodeURIComponent(matchId)}`, {
       headers: { "X-Auth-Token": key },

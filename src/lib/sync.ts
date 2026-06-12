@@ -1,7 +1,26 @@
 import { FIXTURES } from "@/data/fixtures";
 import { TEAMS } from "@/data/teams";
-import { Injury } from "./types";
-import { loadState, recordResult, replaceFeedInjuries } from "./store";
+import { Injury, TournamentState } from "./types";
+import {
+  loadState,
+  recordResult,
+  replaceFeedInjuries,
+  setMarketOddsBatch,
+} from "./store";
+import { getStorage } from "./storage";
+
+/**
+ * Persist a feed-attempt timestamp BEFORE querying, so a feed that errors
+ * persistently can't be hammered by the 10-minute poller into burning the
+ * provider's quota.
+ */
+async function recordSyncAttempt(
+  state: TournamentState,
+  field: "lastInjurySyncAt" | "lastOddsSyncAt",
+): Promise<void> {
+  state[field] = new Date().toISOString();
+  await getStorage().save(state);
+}
 
 /**
  * Automatic results ingestion — replaces manual score entry.
@@ -306,6 +325,8 @@ export async function syncInjuries(opts: { force?: boolean } = {}): Promise<Inju
     }
   }
 
+  await recordSyncAttempt(state, "lastInjurySyncAt");
+
   const url = process.env.INJURIES_FEED_URL ?? DEFAULT_INJURIES_URL;
   const headers: Record<string, string> = {};
   if (process.env.API_FOOTBALL_KEY) {
@@ -355,6 +376,132 @@ export async function syncInjuries(opts: { force?: boolean } = {}): Promise<Inju
     };
   }
 }
+
+// ───────────────────────── market odds feed ─────────────────────────
+
+/**
+ * Pinnacle match odds via The Odds API (the-odds-api.com), enabled by
+ * ODDS_API_KEY. De-vigged Pinnacle lines are the sharpest public benchmark;
+ * each refreshed line flows into the existing 70/30 market/model blend and
+ * the model-vs-market scoreboard. Polled at most every 6 hours (persisted
+ * attempt throttle — the free tier is ~500 requests/month) and only while
+ * fixtures still await results.
+ */
+const DEFAULT_ODDS_SPORT = "soccer_fifa_world_cup";
+const ODDS_SYNC_INTERVAL_MS = 6 * 60 * 60_000;
+
+export interface OddsSyncSummary {
+  ok: boolean;
+  configured: boolean;
+  /** fixtures whose line was added or moved in this run */
+  updated: string[];
+  /** feed events that could not be mapped to a fixture */
+  unmatched: string[];
+  skipped?: string;
+  error?: string;
+}
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export async function syncOdds(opts: { force?: boolean } = {}): Promise<OddsSyncSummary> {
+  if (!process.env.ODDS_API_KEY) {
+    return {
+      ok: false,
+      configured: false,
+      updated: [],
+      unmatched: [],
+      error: "No odds feed configured — set ODDS_API_KEY (the-odds-api.com).",
+    };
+  }
+
+  const state = await loadState();
+  if (!opts.force && state.lastOddsSyncAt) {
+    const age = Date.now() - Date.parse(state.lastOddsSyncAt);
+    if (age < ODDS_SYNC_INTERVAL_MS) {
+      return {
+        ok: true,
+        configured: true,
+        updated: [],
+        unmatched: [],
+        skipped: `odds checked ${Math.round(age / 60_000)}m ago — feed not queried`,
+      };
+    }
+  }
+  if (FIXTURES.every((f) => state.results[f.id])) {
+    return { ok: true, configured: true, updated: [], unmatched: [], skipped: "all fixtures decided" };
+  }
+
+  await recordSyncAttempt(state, "lastOddsSyncAt");
+
+  const sport = process.env.ODDS_SPORT_KEY ?? DEFAULT_ODDS_SPORT;
+  const base = process.env.ODDS_API_BASE ?? "https://api.the-odds-api.com";
+  const url =
+    `${base}/v4/sports/${encodeURIComponent(sport)}/odds` +
+    `?apiKey=${process.env.ODDS_API_KEY}&markets=h2h&oddsFormat=decimal&bookmakers=pinnacle`;
+
+  let events: any[];
+  try {
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) {
+      const body = await res.text();
+      return {
+        ok: false,
+        configured: true,
+        updated: [],
+        unmatched: [],
+        error: `Odds feed responded ${res.status}: ${body.slice(0, 200)}`,
+      };
+    }
+    const data = await res.json();
+    events = Array.isArray(data) ? data : [];
+  } catch (e) {
+    return {
+      ok: false,
+      configured: true,
+      updated: [],
+      unmatched: [],
+      error: e instanceof Error ? e.message : "Odds feed request failed",
+    };
+  }
+
+  const entries: { fixtureId: string; home: number; draw: number; away: number; source: string }[] = [];
+  const unmatched: string[] = [];
+
+  for (const ev of events) {
+    const home = resolveTeamId({ name: ev?.home_team });
+    const away = resolveTeamId({ name: ev?.away_team });
+    const fixture = home && away ? FIXTURE_BY_PAIR[[home, away].sort().join("|")] : undefined;
+    if (!home || !away || !fixture) {
+      unmatched.push(`${ev?.home_team ?? "?"} v ${ev?.away_team ?? "?"}`);
+      continue;
+    }
+    if (state.results[fixture.id]) continue;
+
+    const market = (ev?.bookmakers ?? [])
+      .find((b: any) => b?.key === "pinnacle")
+      ?.markets?.find((m: any) => m?.key === "h2h");
+    if (!market?.outcomes) continue;
+
+    let homePrice: number | undefined;
+    let drawPrice: number | undefined;
+    let awayPrice: number | undefined;
+    for (const o of market.outcomes) {
+      const price = Number(o?.price);
+      if (!Number.isFinite(price)) continue;
+      if (/^draw$/i.test(o?.name ?? "")) drawPrice = price;
+      else if (resolveTeamId({ name: o?.name }) === fixture.home) homePrice = price;
+      else if (resolveTeamId({ name: o?.name }) === fixture.away) awayPrice = price;
+    }
+    if (homePrice == null || drawPrice == null || awayPrice == null) {
+      unmatched.push(`${home} v ${away} (incomplete h2h)`);
+      continue;
+    }
+    entries.push({ fixtureId: fixture.id, home: homePrice, draw: drawPrice, away: awayPrice, source: "Pinnacle" });
+  }
+
+  const updated = await setMarketOddsBatch(entries);
+  return { ok: true, configured: true, updated, unmatched };
+}
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 declare global {
   // per-instance throttle so page reads don't hammer the feed

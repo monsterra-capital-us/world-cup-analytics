@@ -41,29 +41,23 @@ const NAV = [
   { href: "/model", label: "Model" },
 ];
 
-/** Tactics-board mark — X's and O's, dashed pass to the ball, run arrow — on capital blue. */
+/** Minimal tactics mark — X, O and a dashed run to the ball, on capital blue. */
 function Mark() {
   return (
     <svg viewBox="0 0 104 104" aria-hidden="true" className="size-9 shrink-0">
       <rect width="104" height="104" rx="22" fill="#0059FF" />
       <g
         stroke="#fff"
-        strokeWidth="5.5"
+        strokeWidth="6"
         fill="none"
         strokeLinecap="round"
         strokeLinejoin="round"
       >
-        <circle cx="22" cy="44" r="9.5" />
-        <circle cx="35" cy="79" r="8" />
-        <path d="M40 10l9 9M49 10l-9 9" />
-        <path d="M84 38l8 8M92 38l-8 8" />
-        <path d="M10 62l8 8M18 62l-8 8" />
-        <path d="M56 78l8 8M64 78l-8 8" />
-        <path d="M42 71 L72 31" strokeDasharray="7 8" />
-        <path d="M32 38 C 52 14, 76 26, 87 64" />
-        <path d="M88.4 53.1 L88 66 L77.1 58.6" />
+        <circle cx="30" cy="72" r="11" />
+        <path d="M24 22l12 12M36 22l-12 12" />
+        <path d="M41 64 C 58 56, 70 44, 76 30" strokeDasharray="8 9" />
       </g>
-      <circle cx="80" cy="20" r="7.5" fill="#fff" />
+      <circle cx="80" cy="21" r="8" fill="#fff" />
     </svg>
   );
 }

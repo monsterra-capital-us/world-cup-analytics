@@ -99,7 +99,15 @@ fit again — while manually POSTed flags are never touched.
   injuries feed is their World Cup injuries endpoint.
 - `INJURIES_FEED_URL` — optional override; accepts the API-Football shape
   or a plain `[{ "team", "player", "status", "detail" }]` array.
-- `GET /api/sync` — trigger both checks manually and see what changed
+Market odds sync automatically too (every 6 hours, persisted throttle):
+Pinnacle h2h lines via [The Odds API](https://the-odds-api.com) are
+de-vigged and blended into every forecast, and the Model page scores
+model vs market vs blend.
+
+- `ODDS_API_KEY` — key from the-odds-api.com.
+- `ODDS_SPORT_KEY` — optional override of the sport key
+  (default `soccer_fifa_world_cup`).
+- `GET /api/sync` — trigger all checks manually and see what changed
   (`?force=1` queries the feeds unconditionally).
 
 `GET /api/schedule` compares the local fixture calendar against the

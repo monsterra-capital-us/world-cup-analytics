@@ -217,4 +217,40 @@ export async function removeMarketOdds(fixtureId: string): Promise<TournamentSta
   return state;
 }
 
+/**
+ * Feed ingestion: upsert odds for many fixtures in one save. Skips unknown
+ * or already-played fixtures and invalid prices; bumps the version (→
+ * re-simulation) only when a line actually moved.
+ */
+export async function setMarketOddsBatch(
+  entries: { fixtureId: string; home: number; draw: number; away: number; source?: string }[],
+): Promise<string[]> {
+  const state = await loadState();
+  const updated: string[] = [];
+  for (const e of entries) {
+    if (!FIXTURE_BY_ID[e.fixtureId] || state.results[e.fixtureId]) continue;
+    try {
+      validateOdds(e);
+    } catch {
+      continue;
+    }
+    const prev = state.marketOdds[e.fixtureId];
+    if (prev && prev.home === e.home && prev.draw === e.draw && prev.away === e.away) continue;
+    state.marketOdds[e.fixtureId] = {
+      fixtureId: e.fixtureId,
+      home: e.home,
+      draw: e.draw,
+      away: e.away,
+      source: e.source?.trim() || undefined,
+      recordedAt: new Date().toISOString(),
+    } satisfies MarketOdds;
+    updated.push(e.fixtureId);
+  }
+  if (updated.length > 0) {
+    state.version++;
+    await getStorage().save(state);
+  }
+  return updated;
+}
+
 export { injuryPenalty };
