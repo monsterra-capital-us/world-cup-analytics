@@ -101,6 +101,13 @@ fit again — while manually POSTed flags are never touched.
 - `GET /api/sync` — trigger both checks manually and see what changed
   (`?force=1` queries the feeds unconditionally).
 
+Match pages additionally show starting lineups when a lineups feed is
+configured: set `WORLDCUP_API_KEY` (api.worldcupapi.com, `/fixtures` +
+`/lineups` endpoints; `WORLDCUP_API_BASE` overrides the host).
+
+`GET /api/schedule` compares the local fixture calendar against the
+results feed's official match list and reports any drift.
+
 Everything below remains available for webhooks, corrections on a fresh
 state, or running without a feed:
 
