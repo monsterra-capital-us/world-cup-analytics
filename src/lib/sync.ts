@@ -1,6 +1,7 @@
 import { FIXTURES } from "@/data/fixtures";
 import { TEAMS } from "@/data/teams";
-import { loadState, recordResult } from "./store";
+import { Injury } from "./types";
+import { loadState, recordResult, replaceFeedInjuries } from "./store";
 
 /**
  * Automatic results ingestion — replaces manual score entry.
@@ -199,6 +200,141 @@ export async function syncResults(opts: { force?: boolean } = {}): Promise<SyncS
   }
 
   return { ok: true, configured: true, recorded, unmatched };
+}
+
+// ───────────────────────── injuries feed ─────────────────────────
+
+/**
+ * Squad-availability ingestion. Default provider is API-Football
+ * (api-sports.io; their free tier covers the injuries endpoint), or any
+ * custom endpoint via INJURIES_FEED_URL. Feed entries replace previous
+ * feed-sourced flags wholesale — a player no longer listed is fit again —
+ * while manually POSTed flags are never touched.
+ *
+ * Polling is throttled via state.lastInjurySyncAt (persisted, so serverless
+ * cold starts don't burn through free-tier quotas).
+ */
+const DEFAULT_INJURIES_URL =
+  "https://v3.football.api-sports.io/injuries?league=1&season=2026";
+const INJURY_SYNC_INTERVAL_MS = 60 * 60_000; // hourly ≈ 24 calls/day
+
+export interface InjurySyncSummary {
+  ok: boolean;
+  configured: boolean;
+  /** whether the active flag set changed (and the model re-simulates) */
+  changed: boolean;
+  active: number;
+  skipped?: string;
+  error?: string;
+}
+
+function injuriesConfigured(): boolean {
+  return Boolean(process.env.API_FOOTBALL_KEY || process.env.INJURIES_FEED_URL);
+}
+
+function slug(s: string): string {
+  return normalise(s).replace(/ /g, "-");
+}
+
+function mapStatus(raw: string): Injury["status"] {
+  if (/return/i.test(raw)) return "returning";
+  if (/quest|doubt/i.test(raw)) return "doubtful";
+  return "out"; // e.g. API-Football "Missing Fixture"
+}
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+function parseInjuryItem(item: any): Injury | null {
+  const teamRef =
+    typeof item?.team === "string" ? { name: item.team } : item?.team ?? { name: item?.teamId };
+  const teamId = resolveTeamId({
+    tla: typeof item?.teamId === "string" ? item.teamId : teamRef?.tla,
+    name: teamRef?.name,
+  });
+  const player: string | undefined =
+    typeof item?.player === "string" ? item.player : item?.player?.name;
+  if (!teamId || !player) return null;
+
+  const rawStatus: string =
+    item?.player?.type ?? item?.type ?? item?.status ?? "out";
+  const detail: string | undefined =
+    item?.player?.reason ?? item?.reason ?? item?.detail ?? undefined;
+
+  return {
+    id: `feed-${teamId}-${slug(player)}`,
+    teamId,
+    player,
+    status: mapStatus(String(rawStatus)),
+    detail,
+    reportedAt: new Date().toISOString().slice(0, 10),
+  };
+}
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
+/** Fetch the injuries feed and reconcile feed-sourced flags. */
+export async function syncInjuries(opts: { force?: boolean } = {}): Promise<InjurySyncSummary> {
+  if (!injuriesConfigured()) {
+    return {
+      ok: false,
+      configured: false,
+      changed: false,
+      active: 0,
+      error:
+        "No injuries feed configured — set API_FOOTBALL_KEY (api-sports.io) or INJURIES_FEED_URL.",
+    };
+  }
+
+  const state = await loadState();
+  if (!opts.force && state.lastInjurySyncAt) {
+    const age = Date.now() - Date.parse(state.lastInjurySyncAt);
+    if (age < INJURY_SYNC_INTERVAL_MS) {
+      return {
+        ok: true,
+        configured: true,
+        changed: false,
+        active: state.injuries.length,
+        skipped: `injuries checked ${Math.round(age / 60_000)}m ago — feed not queried`,
+      };
+    }
+  }
+
+  const url = process.env.INJURIES_FEED_URL ?? DEFAULT_INJURIES_URL;
+  const headers: Record<string, string> = {};
+  if (process.env.API_FOOTBALL_KEY) {
+    headers["x-apisports-key"] = process.env.API_FOOTBALL_KEY;
+  }
+
+  try {
+    const res = await fetch(url, { headers, cache: "no-store" });
+    if (!res.ok) {
+      return { ok: false, configured: true, changed: false, active: state.injuries.length, error: `Feed responded ${res.status}` };
+    }
+    const data = await res.json();
+    const items: unknown[] = Array.isArray(data)
+      ? data
+      : Array.isArray(data?.response) // API-Football envelope
+        ? data.response
+        : Array.isArray(data?.injuries)
+          ? data.injuries
+          : [];
+
+    // one flag per player — feeds list one entry per missed fixture
+    const byId = new Map<string, Injury>();
+    for (const item of items) {
+      const inj = parseInjuryItem(item);
+      if (inj) byId.set(inj.id, inj);
+    }
+    const feed = [...byId.values()];
+    const changed = await replaceFeedInjuries(feed);
+    return { ok: true, configured: true, changed, active: feed.length };
+  } catch (e) {
+    return {
+      ok: false,
+      configured: true,
+      changed: false,
+      active: state.injuries.length,
+      error: e instanceof Error ? e.message : "Feed request failed",
+    };
+  }
 }
 
 declare global {

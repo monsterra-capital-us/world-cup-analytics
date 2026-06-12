@@ -1,20 +1,24 @@
 import { NextResponse } from "next/server";
-import { syncResults } from "@/lib/sync";
+import { syncInjuries, syncResults } from "@/lib/sync";
 
 export const dynamic = "force-dynamic";
 
 /**
  * GET/POST /api/sync
  *
- * Records any finished matches missing from the state. The feed is only
- * queried when a fixture should have ended without a result, so this is
- * safe to poll continuously (the Vercel cron hits it every 10 minutes);
- * add ?force=1 to query the feed unconditionally.
+ * Reconciles both feeds and reports what happened:
+ * - results: feed queried only when a fixture should have ended without a
+ *   recorded result
+ * - injuries: feed queried at most hourly (persisted throttle)
+ *
+ * Safe to poll continuously (the scheduled job hits it every 10 minutes);
+ * add ?force=1 to query both feeds unconditionally.
  */
 export async function GET(req: Request) {
   const force = new URL(req.url).searchParams.get("force") === "1";
-  const summary = await syncResults({ force });
-  return NextResponse.json(summary, { status: summary.ok ? 200 : 503 });
+  const [results, injuries] = [await syncResults({ force }), await syncInjuries({ force })];
+  const ok = (results.ok || !results.configured) && (injuries.ok || !injuries.configured);
+  return NextResponse.json({ ok, results, injuries }, { status: ok ? 200 : 503 });
 }
 
 export const POST = GET;

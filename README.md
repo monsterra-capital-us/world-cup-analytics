@@ -86,11 +86,20 @@ only queried — and the model only recomputed — when a fixture should have
 ended without a recorded result.
 
 - `FOOTBALL_DATA_API_KEY` — free key from football-data.org (the default
-  feed is their FIFA World Cup endpoint).
+  results feed is their FIFA World Cup endpoint).
 - `RESULTS_FEED_URL` — optional override; any endpoint returning the same
   match-list shape works.
-- `GET /api/sync` — trigger the check manually and see what was recorded
-  (`?force=1` queries the feed unconditionally).
+
+Injuries sync the same way (hourly, persisted throttle): feed-sourced
+flags are replaced wholesale on each poll — a player no longer listed is
+fit again — while manually POSTed flags are never touched.
+
+- `API_FOOTBALL_KEY` — key from api-sports.io (API-Football); the default
+  injuries feed is their World Cup injuries endpoint.
+- `INJURIES_FEED_URL` — optional override; accepts the API-Football shape
+  or a plain `[{ "team", "player", "status", "detail" }]` array.
+- `GET /api/sync` — trigger both checks manually and see what changed
+  (`?force=1` queries the feeds unconditionally).
 
 Everything below remains available for webhooks, corrections on a fresh
 state, or running without a feed:

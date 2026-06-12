@@ -85,6 +85,8 @@ export interface TournamentState {
   injuries: Injury[];
   /** sportsbook odds entered per fixture; blended into predictions */
   marketOdds: Record<string, MarketOdds>;
+  /** last time the injuries feed was queried (throttles polling) */
+  lastInjurySyncAt?: string;
 }
 
 export interface MatchPrediction {

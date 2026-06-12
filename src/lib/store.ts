@@ -127,6 +127,32 @@ export async function removeInjury(id: string): Promise<TournamentState> {
   return state;
 }
 
+/**
+ * Replace all feed-sourced injuries (id prefix "feed-") with the feed's
+ * current list, leaving manual flags untouched. Recoveries clear
+ * automatically because absent players simply stop being in the list.
+ * Bumps the version (→ re-simulation) only when something changed; always
+ * records the sync time for throttling.
+ */
+export async function replaceFeedInjuries(feed: Injury[]): Promise<boolean> {
+  const state = await loadState();
+  const manual = state.injuries.filter((i) => !i.id.startsWith("feed-"));
+  const current = state.injuries.filter((i) => i.id.startsWith("feed-"));
+
+  const key = (i: Injury) => `${i.id}|${i.status}|${i.detail ?? ""}`;
+  const changed =
+    current.length !== feed.length ||
+    new Set([...current.map(key), ...feed.map(key)]).size !== feed.length;
+
+  if (changed) {
+    state.injuries = [...manual, ...feed];
+    state.version++;
+  }
+  state.lastInjurySyncAt = new Date().toISOString();
+  await getStorage().save(state);
+  return changed;
+}
+
 export async function setMarketOdds(input: {
   fixtureId: string;
   home: number;
