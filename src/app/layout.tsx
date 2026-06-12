@@ -41,22 +41,19 @@ const NAV = [
   { href: "/model", label: "Model" },
 ];
 
-/** Minimalist ball — circle, centre pentagon panel and five seams, capital blue. */
+/** Minimalist ball — capital-blue disc with knocked-out pentagon panel and seams. */
 function Mark() {
   return (
-    <svg viewBox="0 0 104 104" aria-hidden="true" className="size-9 shrink-0 text-accent">
-      <g stroke="currentColor" strokeWidth="5" fill="none" strokeLinecap="round">
-        <circle cx="52" cy="52" r="46" />
-        <line x1="52" y1="36" x2="52" y2="13" />
-        <line x1="67.2" y1="47.1" x2="89" y2="40" />
-        <line x1="61.4" y1="64.9" x2="74.9" y2="83.4" />
-        <line x1="42.6" y1="64.9" x2="29.1" y2="83.4" />
-        <line x1="36.8" y1="47.1" x2="15" y2="40" />
+    <svg viewBox="0 0 104 104" aria-hidden="true" className="size-9 shrink-0">
+      <circle cx="52" cy="52" r="48" fill="#0059FF" />
+      <g stroke="#fff" strokeWidth="4.5" strokeLinecap="round">
+        <line x1="52" y1="37" x2="52" y2="6" />
+        <line x1="66.3" y1="47.4" x2="95.7" y2="37.8" />
+        <line x1="60.8" y1="64.1" x2="79" y2="89.2" />
+        <line x1="43.2" y1="64.1" x2="25" y2="89.2" />
+        <line x1="37.7" y1="47.4" x2="8.3" y2="37.8" />
       </g>
-      <polygon
-        fill="currentColor"
-        points="52,36 67.2,47.1 61.4,64.9 42.6,64.9 36.8,47.1"
-      />
+      <polygon fill="#fff" points="52,37 66.3,47.4 60.8,64.1 43.2,64.1 37.7,47.4" />
     </svg>
   );
 }

@@ -12,7 +12,7 @@
   --capital-950: #00091a;
 
   --background: #ffffff;
-  --surface: #fcfbf6; /* bone-50 */
+  --surface: #ffffff; /* white cards, hairline + shadow for hierarchy */
   --surface-2: #f0f2f7; /* slate-100 */
   --border: #e1e4ee; /* slate-200 hairline */
   --foreground: var(--capital-950);
