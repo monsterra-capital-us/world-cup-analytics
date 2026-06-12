@@ -11,7 +11,7 @@ export function Card({
 }) {
   return (
     <section
-      className={`min-w-0 rounded-2xl border border-edge bg-surface/80 shadow-[0_1px_0_rgba(255,255,255,0.03)_inset] ${className}`}
+      className={`min-w-0 rounded-2xl border border-edge bg-surface shadow-[0_1px_2px_rgba(0,9,26,0.04)] ${className}`}
     >
       {children}
     </section>
@@ -83,7 +83,7 @@ export function WdlBar({
     <div className={className}>
       <div className="flex h-2 w-full overflow-hidden rounded-full bg-surface-2">
         <div className="bg-accent-dim" style={{ width: `${pHome * 100}%` }} />
-        <div className="bg-slate-500/70" style={{ width: `${pDraw * 100}%` }} />
+        <div className="bg-slate-400/80" style={{ width: `${pDraw * 100}%` }} />
         <div className="bg-info" style={{ width: `${pAway * 100}%` }} />
       </div>
       <div className="mt-1 flex justify-between text-[11px] tabular-nums text-muted">

@@ -167,24 +167,22 @@ export default async function MatchPage({
         </Card>
       </div>
 
-      {/* lineups (when a lineups feed is configured) */}
-      {lineups.configured && (
-        <Card>
-          <SectionTitle
-            title="Lineups"
-            hint="Starting XI and bench from the lineups feed"
-          />
-          {lineups.available ? (
-            <div className="grid gap-6 px-5 pb-5 sm:grid-cols-2">
-              {[lineups.home!, lineups.away!].map((team) => (
-                <LineupBlock key={team.teamName} lineup={team} />
-              ))}
-            </div>
-          ) : (
-            <p className="px-5 pb-5 text-sm text-muted">{lineups.reason}</p>
-          )}
-        </Card>
-      )}
+      {/* lineups */}
+      <Card>
+        <SectionTitle
+          title="Lineups"
+          hint="Starting XI and bench from the lineups feed"
+        />
+        {lineups.available ? (
+          <div className="grid gap-6 px-5 pb-5 sm:grid-cols-2">
+            {[lineups.home!, lineups.away!].map((team) => (
+              <LineupBlock key={team.teamName} lineup={team} />
+            ))}
+          </div>
+        ) : (
+          <p className="px-5 pb-5 text-sm text-muted">{lineups.reason}</p>
+        )}
+      </Card>
     </div>
   );
 }

@@ -1,29 +1,28 @@
 @import "tailwindcss";
 
 /*
- * Monsterra Capital brand (from the Mobile UI kit):
- * capital blue scale on deep-navy ink, bone foregrounds, slate neutrals,
- * IBM Plex Mono micro-labels, hairlines over shadows.
+ * Monsterra Capital brand (from the Mobile UI kit), light mode:
+ * white ground, bone elevated cards, capital-blue accents, capital-950 ink,
+ * slate hairlines, IBM Plex Mono micro-labels.
  */
 :root {
-  --capital-300: #5c95ff;
-  --capital-400: #2e77ff;
   --capital-500: #0059ff;
-  --capital-900: #001947;
+  --capital-600: #0050e3;
+  --capital-700: #0039a3;
   --capital-950: #00091a;
 
-  --background: var(--capital-950);
-  --surface: #010f2c;
-  --surface-2: #071a40;
-  --border: rgba(255, 255, 255, 0.1);
-  --foreground: #fcfbf6; /* bone-50 */
-  --muted: #9ba3bd; /* slate-400 */
-  --accent: var(--capital-300);
-  --accent-dim: var(--capital-500);
+  --background: #ffffff;
+  --surface: #fcfbf6; /* bone-50 */
+  --surface-2: #f0f2f7; /* slate-100 */
+  --border: #e1e4ee; /* slate-200 hairline */
+  --foreground: var(--capital-950);
+  --muted: #4f5878; /* slate-600 */
+  --accent: var(--capital-500);
+  --accent-dim: var(--capital-600);
   --success: #16a373;
-  --gold: #e89b1f; /* kit --warn */
+  --gold: #b97400; /* kit's light-mode amber label tone */
   --danger: #e04545;
-  --info: #4bb8f0;
+  --info: #1b8ac4; /* kit --info, darkened for legibility on white */
 }
 
 @theme inline {
@@ -51,8 +50,8 @@
 body {
   background: var(--background);
   background-image:
-    radial-gradient(1100px 500px at 80% -10%, rgba(0, 89, 255, 0.12), transparent),
-    radial-gradient(900px 450px at 0% 0%, rgba(75, 184, 240, 0.05), transparent);
+    radial-gradient(1100px 500px at 80% -10%, rgba(0, 89, 255, 0.05), transparent),
+    radial-gradient(900px 450px at 0% 0%, rgba(75, 184, 240, 0.04), transparent);
   color: var(--foreground);
   font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
 }
@@ -69,7 +68,7 @@ h3 {
 }
 
 ::selection {
-  background: rgba(0, 89, 255, 0.45);
+  background: rgba(0, 89, 255, 0.18);
 }
 
 /* horizontally scrollable rows (mobile nav) without a visible scrollbar */
