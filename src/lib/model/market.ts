@@ -1,14 +1,10 @@
 import { MarketOdds, OutcomeProbs } from "@/lib/types";
 
 /**
- * Market-anchored ensemble. Sharp sportsbook closing lines (Pinnacle et al.)
- * are the strongest public predictor of football outcomes, so when odds are
- * available the published probabilities are a blend that leans on the
- * market and uses the model for the score distribution's shape.
+ * Sharp sportsbook closing lines (Pinnacle et al.) are the strongest public
+ * predictor of football outcomes, so we use the de-vigged market purely as a
+ * benchmark to score our model against — the model is never blended with it.
  */
-
-/** weight given to the de-vigged market when blending with the model */
-export const MARKET_WEIGHT = 0.7;
 
 /** strip the bookmaker margin (proportional / multiplicative method) */
 export function devig(odds: MarketOdds): OutcomeProbs {
@@ -17,37 +13,6 @@ export function devig(odds: MarketOdds): OutcomeProbs {
   const ra = 1 / odds.away;
   const total = rh + rd + ra;
   return { pHome: rh / total, pDraw: rd / total, pAway: ra / total };
-}
-
-export function blendOutcomes(model: OutcomeProbs, market: OutcomeProbs): OutcomeProbs {
-  const w = MARKET_WEIGHT;
-  return {
-    pHome: w * market.pHome + (1 - w) * model.pHome,
-    pDraw: w * market.pDraw + (1 - w) * model.pDraw,
-    pAway: w * market.pAway + (1 - w) * model.pAway,
-  };
-}
-
-/**
- * Rescale a score matrix so its win/draw/loss masses hit target outcome
- * probabilities while preserving the model's scoreline shape within each
- * outcome region.
- */
-export function rescaleMatrix(matrix: number[][], target: OutcomeProbs): number[][] {
-  let mH = 0, mD = 0, mA = 0;
-  matrix.forEach((row, a) =>
-    row.forEach((p, b) => {
-      if (a > b) mH += p;
-      else if (a === b) mD += p;
-      else mA += p;
-    }),
-  );
-  const fH = mH > 0 ? target.pHome / mH : 0;
-  const fD = mD > 0 ? target.pDraw / mD : 0;
-  const fA = mA > 0 ? target.pAway / mA : 0;
-  return matrix.map((row, a) =>
-    row.map((p, b) => p * (a > b ? fH : a === b ? fD : fA)),
-  );
 }
 
 export function validateOdds(input: { home: number; draw: number; away: number }): void {

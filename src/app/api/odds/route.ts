@@ -6,8 +6,9 @@ export const dynamic = "force-dynamic";
 /**
  * POST /api/odds
  * Body: { fixtureId, home, draw, away, source? } — decimal odds, e.g. from
- * Pinnacle. The vig is stripped and the probabilities are blended into all
- * predictions. Re-posting for the same fixture overwrites (use closing lines).
+ * Pinnacle. The vig is stripped and the result is stored as a benchmark to
+ * score our model against (it is never blended into predictions). Re-posting
+ * for the same fixture overwrites (use closing lines).
  */
 export async function POST(req: Request) {
   try {

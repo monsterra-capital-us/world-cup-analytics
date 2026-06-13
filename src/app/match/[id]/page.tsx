@@ -5,7 +5,7 @@ import { FIXTURE_BY_ID } from "@/data/fixtures";
 import { TEAM_BY_ID } from "@/data/teams";
 import { kickoffLabel, pct, signed } from "@/lib/format";
 import { getLineups, TeamLineup } from "@/lib/lineups";
-import { Card, InjuryBadge, SectionTitle, TeamChip, WdlBar } from "@/components/ui";
+import { Card, CompareBars, InjuryBadge, SectionTitle, TeamChip, WdlBar } from "@/components/ui";
 import { TeamFactors } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -76,39 +76,15 @@ export default async function MatchPage({
               )}
             </p>
             {mp.market && (
-              <div className="mt-3 overflow-hidden rounded-xl border border-edge text-xs">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-surface-2/60 text-muted">
-                      <th className="px-3 py-1.5 text-left font-medium">Source</th>
-                      <th className="px-3 py-1.5 text-right font-medium">{home.id} win</th>
-                      <th className="px-3 py-1.5 text-right font-medium">Draw</th>
-                      <th className="px-3 py-1.5 text-right font-medium">{away.id} win</th>
-                    </tr>
-                  </thead>
-                  <tbody className="tabular-nums">
-                    <tr className="border-t border-edge/60">
-                      <td className="px-3 py-1.5 text-muted">Model</td>
-                      <td className="px-3 py-1.5 text-right">{pct(mp.model.pHome)}</td>
-                      <td className="px-3 py-1.5 text-right">{pct(mp.model.pDraw)}</td>
-                      <td className="px-3 py-1.5 text-right">{pct(mp.model.pAway)}</td>
-                    </tr>
-                    <tr className="border-t border-edge/60">
-                      <td className="px-3 py-1.5 text-muted">
-                        Market{mp.market.source ? ` (${mp.market.source})` : ""}
-                      </td>
-                      <td className="px-3 py-1.5 text-right">{pct(mp.market.pHome)}</td>
-                      <td className="px-3 py-1.5 text-right">{pct(mp.market.pDraw)}</td>
-                      <td className="px-3 py-1.5 text-right">{pct(mp.market.pAway)}</td>
-                    </tr>
-                    <tr className="border-t border-edge/60 font-semibold">
-                      <td className="px-3 py-1.5">Blend (published)</td>
-                      <td className="px-3 py-1.5 text-right">{pct(mp.pHome)}</td>
-                      <td className="px-3 py-1.5 text-right">{pct(mp.pDraw)}</td>
-                      <td className="px-3 py-1.5 text-right">{pct(mp.pAway)}</td>
-                    </tr>
-                  </tbody>
-                </table>
+              <div className="mt-4 rounded-xl border border-edge p-4">
+                <p className="mb-3 text-xs uppercase tracking-wider text-muted">
+                  Our model vs {mp.market.source ?? "market"} benchmark
+                </p>
+                <CompareBars
+                  labels={[`${home.id} win`, "Draw", `${away.id} win`]}
+                  model={[mp.pHome, mp.pDraw, mp.pAway]}
+                  market={[mp.market.pHome, mp.market.pDraw, mp.market.pAway]}
+                />
               </div>
             )}
           </div>

@@ -59,7 +59,7 @@ export interface ScoreRow {
 }
 
 export interface AggregateScore {
-  source: "model" | "market" | "blend";
+  source: "model" | "market";
   n: number;
   brier: number;
   logLoss: number;
@@ -67,10 +67,9 @@ export interface AggregateScore {
 }
 
 /**
- * Aggregate scores per forecast source. Market/blend rows are computed only
- * over matches where market odds existed pre-match, and the model is also
- * scored on that subset (`modelOnMarketSubset`) for an apples-to-apples
- * comparison.
+ * Aggregate scores per forecast source. The market row is computed only over
+ * matches where odds existed pre-match, and the model is scored on that same
+ * subset for an apples-to-apples comparison.
  */
 export function evaluate(results: MatchResult[]): {
   rows: ScoreRow[];
@@ -108,15 +107,13 @@ export function evaluate(results: MatchResult[]): {
 
   const withMarket = rows.filter((r) => r.forecast.market);
 
-  const overall = [
-    aggregate(rows, "model", (f) => f.model),
-    aggregate(rows, "blend", (f) => f.blend),
-  ].filter((x): x is AggregateScore => Boolean(x));
+  const overall = [aggregate(rows, "model", (f) => f.model)].filter(
+    (x): x is AggregateScore => Boolean(x),
+  );
 
   const marketSubset = [
     aggregate(withMarket, "model", (f) => f.model),
     aggregate(withMarket, "market", (f) => f.market),
-    aggregate(withMarket, "blend", (f) => f.blend),
   ].filter((x): x is AggregateScore => Boolean(x));
 
   return { rows, overall, marketSubset };

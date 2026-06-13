@@ -70,13 +70,13 @@ export async function recordResult(
   if (prior) throw new Error(`Result already recorded for ${fixtureId} (${prior.homeGoals}-${prior.awayGoals})`);
 
   // freeze the pre-match forecast before Elo moves, for honest evaluation
-  const { model, market, blend } = predictFixture(fixtureId, state);
+  const { model, market } = predictFixture(fixtureId, state);
   const result: MatchResult = {
     fixtureId,
     homeGoals,
     awayGoals,
     recordedAt: new Date().toISOString(),
-    forecast: { model, market, blend },
+    forecast: { model, market },
   };
   state.results[fixtureId] = result;
 

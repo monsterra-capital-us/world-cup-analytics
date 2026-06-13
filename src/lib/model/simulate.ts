@@ -17,7 +17,7 @@ import {
 } from "./poisson";
 import { effectiveRating, teamFactors } from "./strength";
 import { eloExpected } from "./elo";
-import { blendOutcomes, devig, rescaleMatrix } from "./market";
+import { devig } from "./market";
 import { Fixture, OutcomeProbs } from "@/lib/types";
 
 export const SIMULATIONS = 5000;
@@ -145,20 +145,22 @@ const R32_TEMPLATE: [Slot, Slot][] = [
 
 type StageKey = "pR32" | "pR16" | "pQF" | "pSF" | "pFinal" | "pChampion";
 
+/**
+ * Our model's view of a fixture. The score distribution (and thus the
+ * published outcome probabilities) comes purely from the model; the market,
+ * when present, is attached only as a benchmark for the Model page.
+ */
 export function predictFixture(
   fixtureId: string,
   state: TournamentState,
-): { model: OutcomeProbs; market?: OutcomeProbs; blend: OutcomeProbs; matrix: number[][]; d: ScoreDistribution; edge: number } {
+): { model: OutcomeProbs; market?: OutcomeProbs; matrix: number[][]; d: ScoreDistribution; edge: number } {
   const f = FIXTURES.find((x) => x.id === fixtureId)!;
   const edge = homeEdge(f);
   const diff = effectiveRating(f.home, state) - effectiveRating(f.away, state) + edge;
   const d = scoreDistribution(diff);
   const model: OutcomeProbs = { pHome: d.pA, pDraw: d.pDraw, pAway: d.pB };
   const odds = state.marketOdds[fixtureId];
-  if (!odds) return { model, blend: model, matrix: d.matrix, d, edge };
-  const market = devig(odds);
-  const blend = blendOutcomes(model, market);
-  return { model, market, blend, matrix: rescaleMatrix(d.matrix, blend), d, edge };
+  return { model, market: odds ? devig(odds) : undefined, matrix: d.matrix, d, edge };
 }
 
 export function runSimulation(state: TournamentState, nSims = SIMULATIONS): Predictions {
@@ -167,16 +169,15 @@ export function runSimulation(state: TournamentState, nSims = SIMULATIONS): Pred
   const ratings: Record<string, number> = {};
   for (const t of TEAMS) ratings[t.id] = effectiveRating(t.id, state);
 
-  // exact (non-MC) per-fixture predictions; market-blended where odds exist
+  // exact (non-MC) per-fixture predictions from the model
   const matchPredictions: Record<string, MatchPrediction> = {};
   const samplingMatrix: Record<string, number[][]> = {};
   for (const f of FIXTURES) {
-    const { model, market, blend, matrix, d, edge } = predictFixture(f.id, state);
+    const { model, market, matrix, d, edge } = predictFixture(f.id, state);
     samplingMatrix[f.id] = matrix;
     matchPredictions[f.id] = {
       fixtureId: f.id,
-      pHome: blend.pHome, pDraw: blend.pDraw, pAway: blend.pAway,
-      model,
+      pHome: model.pHome, pDraw: model.pDraw, pAway: model.pAway,
       market: market ? { ...market, source: state.marketOdds[f.id]?.source } : undefined,
       homeEdge: edge,
       expHomeGoals: d.lambdaA, expAwayGoals: d.lambdaB,

@@ -127,3 +127,69 @@ export function MatchLink({
     </Link>
   );
 }
+
+export const SERIES = {
+  model: { label: "Our model", color: "var(--accent)" },
+  market: { label: "Market", color: "var(--info)" },
+} as const;
+
+/** Legend dot + label, reused across the comparison views */
+export function LegendDot({ which }: { which: keyof typeof SERIES }) {
+  const s = SERIES[which];
+  return (
+    <span className="inline-flex items-center gap-1.5 text-xs text-muted">
+      <span className="inline-block size-2.5 rounded-sm" style={{ background: s.color }} />
+      {s.label}
+    </span>
+  );
+}
+
+/**
+ * Grouped horizontal bars comparing the model and market probability for
+ * each outcome. Values are 0–1.
+ */
+export function CompareBars({
+  labels,
+  model,
+  market,
+}: {
+  labels: string[];
+  model: number[];
+  market: number[];
+}) {
+  return (
+    <div className="space-y-3">
+      <div className="flex gap-4">
+        <LegendDot which="model" />
+        <LegendDot which="market" />
+      </div>
+      {labels.map((label, i) => (
+        <div key={label}>
+          <div className="mb-1 flex justify-between text-xs">
+            <span className="text-muted">{label}</span>
+            <span className="tabular-nums">
+              <span className="text-accent">{pct(model[i])}</span>
+              <span className="text-muted"> vs </span>
+              <span className="text-info">{pct(market[i])}</span>
+            </span>
+          </div>
+          <div className="space-y-1">
+            <Bar value={model[i]} color={SERIES.model.color} />
+            <Bar value={market[i]} color={SERIES.market.color} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Bar({ value, color }: { value: number; color: string }) {
+  return (
+    <div className="h-2 w-full overflow-hidden rounded-full bg-surface-2">
+      <div
+        className="h-full rounded-full"
+        style={{ width: `${Math.max(value * 100, 1.5)}%`, background: color }}
+      />
+    </div>
+  );
+}

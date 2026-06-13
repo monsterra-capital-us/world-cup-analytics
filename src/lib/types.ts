@@ -46,8 +46,8 @@ export interface Fixture {
 /** outcome probabilities frozen at the moment the result was recorded */
 export interface ForecastSnapshot {
   model: OutcomeProbs;
+  /** sharp-book benchmark, when odds were entered pre-match */
   market?: OutcomeProbs;
-  blend: OutcomeProbs;
 }
 
 export interface OutcomeProbs {
@@ -83,7 +83,7 @@ export interface TournamentState {
   elo: Record<string, number>;
   results: Record<string, MatchResult>;
   injuries: Injury[];
-  /** sportsbook odds entered per fixture; blended into predictions */
+  /** sportsbook odds entered per fixture; used as a benchmark, not blended in */
   marketOdds: Record<string, MarketOdds>;
   /** last time the injuries feed was queried (throttles polling) */
   lastInjurySyncAt?: string;
@@ -91,13 +91,11 @@ export interface TournamentState {
 
 export interface MatchPrediction {
   fixtureId: string;
-  /** blended probabilities (market-anchored when odds exist) — used everywhere */
+  /** our model's probabilities — these are the published prediction */
   pHome: number;
   pDraw: number;
   pAway: number;
-  /** pure model view, for comparison */
-  model: OutcomeProbs;
-  /** de-vigged market view, when odds have been entered */
+  /** de-vigged sharp-book benchmark, when odds have been entered */
   market?: OutcomeProbs & { source?: string };
   /** Elo points of home advantage applied to the home side (host nations) */
   homeEdge: number;
