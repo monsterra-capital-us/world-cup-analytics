@@ -58,6 +58,97 @@ export interface ScoreRow {
   forecast: ForecastSnapshot;
 }
 
+// ─────────────── score deviations (predicted vs actual goals) ───────────────
+
+export interface ScoreDeviationRow {
+  fixtureId: string;
+  homeGoals: number;
+  awayGoals: number;
+  expHome: number;
+  expAway: number;
+  topScore?: { home: number; away: number; p: number };
+  /** actual − predicted goals, per side */
+  devHome: number;
+  devAway: number;
+  outcome: Outcome;
+  predictedOutcome: Outcome;
+  outcomeHit: boolean;
+  exactHit: boolean;
+}
+
+export interface DeviationSummary {
+  n: number;
+  outcomeHits: number;
+  exactHits: number;
+  predictedGoals: number;
+  actualGoals: number;
+  /** mean absolute per-team goal error */
+  mae: number;
+  /** mean signed per-team error: > 0 means the model under-predicts goals */
+  bias: number;
+}
+
+function mostLikelyOutcome(p: OutcomeProbs): Outcome {
+  if (p.pHome >= p.pDraw && p.pHome >= p.pAway) return "home";
+  if (p.pAway >= p.pDraw) return "away";
+  return "draw";
+}
+
+/**
+ * Per-match deviation between the frozen pre-match score expectation and the
+ * final score — the raw material for the calibration loop.
+ */
+export function scoreDeviations(results: MatchResult[]): {
+  rows: ScoreDeviationRow[];
+  summary: DeviationSummary;
+} {
+  const rows: ScoreDeviationRow[] = results
+    .filter(
+      (r) =>
+        r.forecast?.expHomeGoals != null && r.forecast.expAwayGoals != null,
+    )
+    .sort((a, b) => a.recordedAt.localeCompare(b.recordedAt))
+    .map((r) => {
+      const f = r.forecast!;
+      const outcome = outcomeOf(r);
+      const predictedOutcome = mostLikelyOutcome(f.blend);
+      return {
+        fixtureId: r.fixtureId,
+        homeGoals: r.homeGoals,
+        awayGoals: r.awayGoals,
+        expHome: f.expHomeGoals!,
+        expAway: f.expAwayGoals!,
+        topScore: f.topScore,
+        devHome: r.homeGoals - f.expHomeGoals!,
+        devAway: r.awayGoals - f.expAwayGoals!,
+        outcome,
+        predictedOutcome,
+        outcomeHit: outcome === predictedOutcome,
+        exactHit:
+          f.topScore != null &&
+          f.topScore.home === r.homeGoals &&
+          f.topScore.away === r.awayGoals,
+      };
+    });
+
+  const n = rows.length;
+  const summary: DeviationSummary = {
+    n,
+    outcomeHits: rows.filter((r) => r.outcomeHit).length,
+    exactHits: rows.filter((r) => r.exactHit).length,
+    predictedGoals: rows.reduce((s, r) => s + r.expHome + r.expAway, 0),
+    actualGoals: rows.reduce((s, r) => s + r.homeGoals + r.awayGoals, 0),
+    mae: n
+      ? rows.reduce((s, r) => s + Math.abs(r.devHome) + Math.abs(r.devAway), 0) /
+        (2 * n)
+      : 0,
+    bias: n
+      ? rows.reduce((s, r) => s + r.devHome + r.devAway, 0) / (2 * n)
+      : 0,
+  };
+  return { rows, summary };
+}
+
 export interface AggregateScore {
   source: "model" | "market" | "blend";
   n: number;

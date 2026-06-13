@@ -48,6 +48,11 @@ export interface ForecastSnapshot {
   model: OutcomeProbs;
   market?: OutcomeProbs;
   blend: OutcomeProbs;
+  /** pre-match expected goals — fuels the score-deviation chart + calibration */
+  expHomeGoals?: number;
+  expAwayGoals?: number;
+  /** pre-match most likely scoreline */
+  topScore?: { home: number; away: number; p: number };
 }
 
 export interface OutcomeProbs {
@@ -87,6 +92,8 @@ export interface TournamentState {
   marketOdds: Record<string, MarketOdds>;
   /** last time the injuries feed was queried (throttles polling) */
   lastInjurySyncAt?: string;
+  /** last time the odds feed was queried (throttles polling) */
+  lastOddsSyncAt?: string;
 }
 
 export interface MatchPrediction {

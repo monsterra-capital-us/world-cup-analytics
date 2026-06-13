@@ -1,8 +1,14 @@
 import { loadState } from "@/lib/store";
 import { maybeSyncResults } from "@/lib/sync";
-import { evaluate, AggregateScore } from "@/lib/model/evaluate";
+import {
+  evaluate,
+  scoreDeviations,
+  AggregateScore,
+  ScoreDeviationRow,
+} from "@/lib/model/evaluate";
+import { computeCalibration } from "@/lib/model/calibrate";
 import { FIXTURE_BY_ID } from "@/data/fixtures";
-import { pct } from "@/lib/format";
+import { pct, signed } from "@/lib/format";
 import { Card, SectionTitle, TeamChip } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +22,10 @@ const SOURCE_LABEL: Record<string, string> = {
 export default async function ModelPage() {
   await maybeSyncResults();
   const state = await loadState();
-  const { rows, overall, marketSubset } = evaluate(Object.values(state.results));
+  const results = Object.values(state.results);
+  const { rows, overall, marketSubset } = evaluate(results);
+  const { rows: devRows, summary } = scoreDeviations(results);
+  const calibration = computeCalibration(results);
 
   return (
     <div className="space-y-6">
@@ -53,11 +62,56 @@ export default async function ModelPage() {
               hint={
                 marketSubset.length
                   ? "Apples-to-apples: every source scored on the same matches"
-                  : "POST pre-match odds to /api/odds to unlock this comparison"
+                  : "Pinnacle lines are stored for all upcoming fixtures — this fills in as the first of them finishes"
               }
               scores={marketSubset}
             />
           </div>
+
+          <Card>
+            <SectionTitle
+              title="Predicted vs actual scores"
+              hint="Bar = goals actually scored · tick = pre-match expected goals (frozen at kickoff). Deviations feed the auto-calibration below."
+            />
+            <div className="grid grid-cols-2 gap-3 px-5 pb-4 sm:grid-cols-3 lg:grid-cols-6">
+              <Mini label="Matches" value={String(summary.n)} />
+              <Mini
+                label="Outcome calls"
+                value={`${summary.outcomeHits}/${summary.n}`}
+              />
+              <Mini
+                label="Exact scores"
+                value={`${summary.exactHits}/${summary.n}`}
+              />
+              <Mini
+                label="Goals act / pred"
+                value={`${summary.actualGoals} / ${summary.predictedGoals.toFixed(1)}`}
+              />
+              <Mini label="MAE (goals)" value={summary.mae.toFixed(2)} />
+              <Mini
+                label="Bias"
+                value={signed(summary.bias, 2)}
+                tone={Math.abs(summary.bias) >= 0.5 ? "bad" : undefined}
+              />
+            </div>
+            <div className="space-y-2 px-5 pb-4">
+              {devRows.map((row) => (
+                <DeviationBlock key={row.fixtureId} row={row} />
+              ))}
+            </div>
+            <p className="border-t border-edge/60 px-5 py-3 text-xs text-muted">
+              <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">
+                Auto-calibration
+              </span>{" "}
+              — expected goals are currently scaled ×
+              <span className="font-semibold text-foreground">
+                {calibration.goalScale.toFixed(3)}
+              </span>
+              , re-fit from these deviations after every recorded match
+              (shrunk toward 1.000 by a 10-match prior, capped at ±25%), and
+              applied to every forecast and tournament simulation.
+            </p>
+          </Card>
 
           <Card>
             <SectionTitle
@@ -171,6 +225,120 @@ function ScoreCard({
         )}
       </div>
     </Card>
+  );
+}
+
+function Mini({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone?: "bad";
+}) {
+  return (
+    <div className="rounded-lg bg-surface-2/60 px-3 py-2">
+      <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-muted">
+        {label}
+      </p>
+      <p
+        className={`mt-1 text-sm font-bold tabular-nums ${tone === "bad" ? "text-danger" : ""}`}
+      >
+        {value}
+      </p>
+    </div>
+  );
+}
+
+const GOAL_BAR_MAX = 5;
+
+function DeviationBlock({ row }: { row: ScoreDeviationRow }) {
+  const f = FIXTURE_BY_ID[row.fixtureId];
+  return (
+    <div className="rounded-xl bg-surface-2/40 px-4 py-3">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+        <span className="flex min-w-0 items-center gap-2">
+          <span className="rounded bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] font-medium text-muted">
+            {f.group}
+          </span>
+          <TeamChip teamId={f.home} short />
+          <span className="rounded-lg bg-surface-2 px-2 py-0.5 font-bold tabular-nums">
+            {row.homeGoals}–{row.awayGoals}
+          </span>
+          <TeamChip teamId={f.away} short />
+        </span>
+        <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted">
+          predicted {row.expHome.toFixed(1)}–{row.expAway.toFixed(1)}
+          {row.topScore && ` · likely ${row.topScore.home}–${row.topScore.away}`}
+        </span>
+        <span className="ml-auto flex gap-1.5">
+          <Verdict ok={row.outcomeHit} label={row.outcomeHit ? "outcome ✓" : `outcome ✗ (${row.predictedOutcome})`} />
+          {row.exactHit && <Verdict ok label="exact ✓" />}
+        </span>
+      </div>
+      <div className="mt-2 grid gap-1.5 sm:grid-cols-2 sm:gap-x-6">
+        <GoalBar teamId={f.home} exp={row.expHome} actual={row.homeGoals} dev={row.devHome} />
+        <GoalBar teamId={f.away} exp={row.expAway} actual={row.awayGoals} dev={row.devAway} />
+      </div>
+    </div>
+  );
+}
+
+function Verdict({ ok, label }: { ok: boolean; label: string }) {
+  return (
+    <span
+      className={`rounded-full px-2 py-0.5 font-mono text-[9px] font-medium uppercase tracking-[0.1em] ${
+        ok ? "bg-success/15 text-success" : "bg-danger/15 text-danger"
+      }`}
+    >
+      {label}
+    </span>
+  );
+}
+
+function GoalBar({
+  teamId,
+  exp,
+  actual,
+  dev,
+}: {
+  teamId: string;
+  exp: number;
+  actual: number;
+  dev: number;
+}) {
+  const width = (g: number) => `${Math.min(g / GOAL_BAR_MAX, 1) * 100}%`;
+  const abs = Math.abs(dev);
+  const devClass =
+    abs >= 1.5
+      ? "bg-danger/15 text-danger"
+      : abs >= 0.75
+        ? "bg-gold/15 text-gold"
+        : "bg-surface-2 text-muted";
+  return (
+    <div className="flex items-center gap-2">
+      <span className="w-9 shrink-0 font-mono text-[10px] uppercase tracking-wider text-muted">
+        {teamId}
+      </span>
+      <div className="relative h-3.5 min-w-0 flex-1 overflow-hidden rounded bg-surface-2">
+        <div
+          className="absolute inset-y-0 left-0 rounded bg-accent-dim/75"
+          style={{ width: width(actual) }}
+        />
+        <div
+          className="absolute inset-y-0 w-0.5 bg-foreground/60"
+          style={{ left: width(exp) }}
+          title={`predicted ${exp.toFixed(2)} goals`}
+        />
+      </div>
+      <span
+        className={`w-12 shrink-0 rounded px-1 py-0.5 text-right font-mono text-[10px] tabular-nums ${devClass}`}
+        title="actual − predicted goals"
+      >
+        {signed(dev, 1)}
+      </span>
+    </div>
   );
 }
 

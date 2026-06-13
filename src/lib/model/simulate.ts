@@ -16,6 +16,7 @@ import {
   ScoreDistribution,
 } from "./poisson";
 import { effectiveRating, teamFactors } from "./strength";
+import { computeCalibration } from "./calibrate";
 import { eloExpected } from "./elo";
 import { blendOutcomes, devig, rescaleMatrix } from "./market";
 import { Fixture, OutcomeProbs } from "@/lib/types";
@@ -152,7 +153,9 @@ export function predictFixture(
   const f = FIXTURES.find((x) => x.id === fixtureId)!;
   const edge = homeEdge(f);
   const diff = effectiveRating(f.home, state) - effectiveRating(f.away, state) + edge;
-  const d = scoreDistribution(diff);
+  // self-calibration: goal rate re-fit from past predicted-vs-actual totals
+  const { goalScale } = computeCalibration(Object.values(state.results));
+  const d = scoreDistribution(diff, goalScale);
   const model: OutcomeProbs = { pHome: d.pA, pDraw: d.pDraw, pAway: d.pB };
   const odds = state.marketOdds[fixtureId];
   if (!odds) return { model, blend: model, matrix: d.matrix, d, edge };
@@ -163,7 +166,8 @@ export function predictFixture(
 
 export function runSimulation(state: TournamentState, nSims = SIMULATIONS): Predictions {
   const rand = mulberry32(20260611 ^ state.version);
-  const koDist = makeDistCache(KNOCKOUT_GOAL_SCALE);
+  const { goalScale } = computeCalibration(Object.values(state.results));
+  const koDist = makeDistCache(KNOCKOUT_GOAL_SCALE * goalScale);
   const ratings: Record<string, number> = {};
   for (const t of TEAMS) ratings[t.id] = effectiveRating(t.id, state);
 
