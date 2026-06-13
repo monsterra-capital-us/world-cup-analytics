@@ -7,12 +7,3 @@ export function signed(n: number, digits = 0): string {
   const v = n.toFixed(digits);
   return n > 0 ? `+${v}` : v;
 }
-
-export function dayLabel(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", {
-    timeZone: "UTC",
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  });
-}
