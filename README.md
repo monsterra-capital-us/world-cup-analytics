@@ -61,6 +61,28 @@ zero-setup for local use.
 
 ## Deploying to Vercel
 
+### Option A — automated via GitHub Actions (push to deploy)
+
+A workflow at `.github/workflows/deploy-vercel.yml` deploys to Vercel from
+GitHub's runners on every push to the feature branch (and on demand from the
+**Actions** tab). One-time setup:
+
+1. Create a Vercel access token at
+   [vercel.com/account/tokens](https://vercel.com/account/tokens).
+2. Add it as a repository secret: **Settings → Secrets and variables →
+   Actions → New repository secret**, name `VERCEL_TOKEN`. The token lives
+   only in that secret — never in the repo.
+3. Run the **Deploy to Vercel** workflow (Actions tab → Run workflow, or just
+   push). The live URL is printed in the run summary. The first run creates
+   the Vercel project automatically; later runs redeploy it.
+
+Then add runtime env vars in the Vercel project (Settings → Environment
+Variables) and redeploy: `POSTGRES_URL` for persistence (Storage tab →
+create Postgres → it sets this for you) and `FOOTBALL_DATA_API_KEY` for
+automatic results sync.
+
+### Option B — Vercel dashboard
+
 1. Go to [vercel.com/new](https://vercel.com/new) and import this
    repository (framework is auto-detected as Next.js — no settings needed).
 2. In the project's **Storage** tab, create a **Postgres** database (Neon,

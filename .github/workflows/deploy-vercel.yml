@@ -1,0 +1,60 @@
+name: Deploy to Vercel
+
+# Deploys the app to Vercel from GitHub's runners (which have the network
+# access this app's Claude Code environment does not). Triggered on every push
+# to the feature branch and on-demand from the Actions tab.
+#
+# Setup (one time): add a repository secret named VERCEL_TOKEN
+#   Settings → Secrets and variables → Actions → New repository secret
+#   Name: VERCEL_TOKEN   Value: a Vercel access token (vercel.com/account/tokens)
+# The token is read only from that secret — it is never stored in the repo.
+
+on:
+  push:
+    branches: [claude/determined-keller-1s5wpc]
+  workflow_dispatch:
+
+# avoid overlapping deploys racing each other
+concurrency:
+  group: vercel-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Verify VERCEL_TOKEN secret is set
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "::error::Repository secret VERCEL_TOKEN is not set."
+            echo "Add it under Settings → Secrets and variables → Actions, then re-run." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Deploy to Vercel production
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          set -euo pipefail
+          # First run creates the project (named from this repo); later runs
+          # link to that same project automatically. Build happens on Vercel.
+          url="$(vercel deploy --prod --yes --token "$VERCEL_TOKEN")"
+          echo "Deployed: $url"
+          {
+            echo "## ✅ Deployed to Vercel"
+            echo ""
+            echo "**Live URL:** $url"
+          } >> "$GITHUB_STEP_SUMMARY"
