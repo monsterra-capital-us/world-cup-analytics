@@ -1,0 +1,23 @@
+# Temporary diagnostic (removed when done): checks TLS on the custom domain
+# from a neutral network with an uncached DNS resolver.
+name: TLS probe
+
+on: push
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: DNS resolution
+        run: |
+          getent hosts worldcup.monsterracapital.com || true
+          python3 -c "import socket; print(socket.getaddrinfo('worldcup.monsterracapital.com', 443)[0][4])" || true
+      - name: Certificate served
+        run: |
+          echo | openssl s_client -connect worldcup.monsterracapital.com:443 -servername worldcup.monsterracapital.com 2>/dev/null | openssl x509 -noout -subject -issuer -dates || true
+      - name: HTTPS response
+        run: |
+          curl -sSI --max-time 30 "https://worldcup.monsterracapital.com/" | head -8 || true
+      - name: HTTP redirect
+        run: |
+          curl -sSI --max-time 30 "http://worldcup.monsterracapital.com/" | head -5 || true
