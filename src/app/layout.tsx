@@ -51,7 +51,7 @@ function Mark() {
         <circle cx="27" cy="74" r="7" />
         <path d="M36 71 Q 54 64 72 30" />
         <path d="M59.5 36.4 L72 30 L73.7 43.9" />
-        <path d="M34 44 L44 54 M44 44 L34 54" />
+        <path d="M27 26 L39 38 M39 26 L27 38" />
         <circle cx="63" cy="69" r="6" />
       </g>
     </svg>
