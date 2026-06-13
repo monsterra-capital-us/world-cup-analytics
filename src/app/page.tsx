@@ -2,7 +2,8 @@ import Link from "next/link";
 import { getPredictions, loadState } from "@/lib/store";
 import { FIXTURES } from "@/data/fixtures";
 import { TEAM_BY_ID } from "@/data/teams";
-import { kickoffLabel, pct, signed } from "@/lib/format";
+import { pct, signed } from "@/lib/format";
+import { LocalTime } from "@/components/LocalTime";
 import {
   Card,
   InjuryBadge,
@@ -165,7 +166,7 @@ export default async function Dashboard() {
                         <TeamChip teamId={f.away} />
                       </span>
                       <span className="shrink-0 text-xs text-muted tabular-nums">
-                        {kickoffLabel(f.kickoff)}
+                        <LocalTime iso={f.kickoff} />
                       </span>
                     </div>
                     <div className="mt-2 flex items-center gap-4">

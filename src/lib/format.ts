@@ -8,17 +8,6 @@ export function signed(n: number, digits = 0): string {
   return n > 0 ? `+${v}` : v;
 }
 
-export function kickoffLabel(iso: string): string {
-  return new Date(iso).toLocaleString("en-US", {
-    timeZone: "UTC",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }) + " UTC";
-}
-
 export function dayLabel(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", {
     timeZone: "UTC",

@@ -1,6 +1,7 @@
 import { getPredictions, loadState } from "@/lib/store";
 import { FIXTURES } from "@/data/fixtures";
-import { dayLabel, kickoffLabel, pct } from "@/lib/format";
+import { dayLabel, pct } from "@/lib/format";
+import { LocalTime } from "@/components/LocalTime";
 import { Card, MatchLink, TeamChip, WdlBar } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
@@ -55,7 +56,7 @@ export default async function MatchesPage() {
                         <TeamChip teamId={f.away} />
                       </span>
                       <span className="shrink-0 text-xs text-muted tabular-nums">
-                        {result ? "FT" : kickoffLabel(f.kickoff)}
+                        {result ? "FT" : <LocalTime iso={f.kickoff} />}
                       </span>
                     </div>
                     {!result && (

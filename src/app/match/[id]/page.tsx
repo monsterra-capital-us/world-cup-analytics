@@ -3,8 +3,9 @@ import Link from "next/link";
 import { getPredictions, loadState } from "@/lib/store";
 import { FIXTURE_BY_ID } from "@/data/fixtures";
 import { TEAM_BY_ID } from "@/data/teams";
-import { kickoffLabel, pct, signed } from "@/lib/format";
+import { pct, signed } from "@/lib/format";
 import { getLineups, TeamLineup } from "@/lib/lineups";
+import { LocalTime } from "@/components/LocalTime";
 import { Card, CompareBars, InjuryBadge, SectionTitle, TeamChip, WdlBar } from "@/components/ui";
 import { TeamFactors } from "@/lib/types";
 
@@ -40,7 +41,7 @@ export default async function MatchPage({
       <Card className="px-4 py-4 sm:px-6 sm:py-5">
         <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted">
           Group {fixture.group} · Matchday {fixture.matchday} · {fixture.venue} ·{" "}
-          {kickoffLabel(fixture.kickoff)}
+          <LocalTime iso={fixture.kickoff} />
         </p>
         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 sm:gap-x-6">
           <span className="text-xl font-bold sm:text-2xl">
@@ -57,38 +58,88 @@ export default async function MatchPage({
             {away.flag} {away.name}
           </span>
         </div>
-        {result ? (
+
+        {result && (
           <p className="mt-3 text-sm text-muted">
-            Full time. This result has been folded into both teams&apos; Elo ratings —
-            the probabilities below are the model&apos;s pre-match view.
+            Full time. This result is folded into both teams&apos; Elo ratings — the
+            panels below are the model&apos;s pre-match view.
           </p>
-        ) : (
-          <div className="mt-4 max-w-xl">
-            <WdlBar pHome={mp.pHome} pDraw={mp.pDraw} pAway={mp.pAway} />
-            <p className="mt-2 text-xs text-muted">
-              Expected goals: {home.id} {mp.expHomeGoals.toFixed(2)} · {away.id}{" "}
-              {mp.expAwayGoals.toFixed(2)}
-              {mp.homeEdge !== 0 && (
-                <>
-                  {" "}· host advantage{" "}
-                  {mp.homeEdge > 0 ? home.id : away.id} +{Math.abs(mp.homeEdge)} Elo
-                </>
-              )}
+        )}
+
+        <div className="mt-5 grid gap-4 lg:grid-cols-2">
+          {/* outcome panel */}
+          <div className="rounded-2xl bg-surface-2/40 p-4 sm:p-5">
+            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">
+              {result ? "Pre-match probabilities" : "Match outcome"}
             </p>
-            {mp.market && (
-              <div className="mt-4 rounded-xl border border-edge p-4">
-                <p className="mb-3 text-xs uppercase tracking-wider text-muted">
-                  Our model vs {mp.market.source ?? "market"} benchmark
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              <OutcomeStat label={home.id} sub="win" value={mp.pHome} color="var(--accent)" />
+              <OutcomeStat label="Draw" sub="" value={mp.pDraw} color="var(--muted)" />
+              <OutcomeStat label={away.id} sub="win" value={mp.pAway} color="var(--info)" />
+            </div>
+            <WdlBar className="mt-4" pHome={mp.pHome} pDraw={mp.pDraw} pAway={mp.pAway} />
+            <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+              <Stat label="Expected goals">
+                {home.id} {mp.expHomeGoals.toFixed(2)} · {away.id} {mp.expAwayGoals.toFixed(2)}
+              </Stat>
+              <Stat label="Host advantage">
+                {mp.homeEdge === 0
+                  ? "Neutral venue"
+                  : `${mp.homeEdge > 0 ? home.id : away.id} +${Math.abs(mp.homeEdge)} Elo`}
+              </Stat>
+            </dl>
+          </div>
+
+          {/* right panel: market benchmark when present, else projected score */}
+          <div className="rounded-2xl bg-surface-2/40 p-4 sm:p-5">
+            {mp.market ? (
+              <>
+                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">
+                  Our model vs {mp.market.source ?? "market"}
                 </p>
-                <CompareBars
-                  labels={[`${home.id} win`, "Draw", `${away.id} win`]}
-                  model={[mp.pHome, mp.pDraw, mp.pAway]}
-                  market={[mp.market.pHome, mp.market.pDraw, mp.market.pAway]}
-                />
-              </div>
+                <div className="mt-3">
+                  <CompareBars
+                    labels={[`${home.id} win`, "Draw", `${away.id} win`]}
+                    model={[mp.pHome, mp.pDraw, mp.pAway]}
+                    market={[mp.market.pHome, mp.market.pDraw, mp.market.pAway]}
+                  />
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">
+                  Projected scoreline
+                </p>
+                <div className="mt-3 flex items-baseline gap-3">
+                  <span className="text-3xl font-black tabular-nums">
+                    {mp.topScores[0].home}
+                    <span className="mx-1.5 text-muted">–</span>
+                    {mp.topScores[0].away}
+                  </span>
+                  <span className="text-sm text-muted">
+                    {home.id} v {away.id} · {pct(mp.topScores[0].p)} likely
+                  </span>
+                </div>
+                <p className="mt-4 mb-1.5 text-[11px] uppercase tracking-wider text-muted">
+                  Other likely results
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {mp.topScores.slice(1, 5).map((s) => (
+                    <span
+                      key={`${s.home}-${s.away}`}
+                      className="rounded-lg bg-surface px-2.5 py-1 text-xs tabular-nums shadow-sm"
+                    >
+                      <span className="font-bold">
+                        {s.home}–{s.away}
+                      </span>{" "}
+                      <span className="text-muted">{pct(s.p)}</span>
+                    </span>
+                  ))}
+                </div>
+              </>
             )}
           </div>
-        )}
+        </div>
       </Card>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -159,6 +210,39 @@ export default async function MatchPage({
           <p className="px-5 pb-5 text-sm text-muted">{lineups.reason}</p>
         )}
       </Card>
+    </div>
+  );
+}
+
+function OutcomeStat({
+  label,
+  sub,
+  value,
+  color,
+}: {
+  label: string;
+  sub: string;
+  value: number;
+  color: string;
+}) {
+  return (
+    <div className="rounded-xl bg-surface px-2 py-2.5 text-center shadow-sm">
+      <p className="text-lg font-bold tabular-nums sm:text-xl" style={{ color }}>
+        {pct(value)}
+      </p>
+      <p className="mt-0.5 text-[11px] text-muted">
+        {label}
+        {sub ? ` ${sub}` : ""}
+      </p>
+    </div>
+  );
+}
+
+function Stat({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <dt className="text-[11px] uppercase tracking-wider text-muted">{label}</dt>
+      <dd className="mt-0.5 tabular-nums">{children}</dd>
     </div>
   );
 }
