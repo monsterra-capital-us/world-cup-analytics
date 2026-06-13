@@ -41,31 +41,21 @@ const NAV = [
   { href: "/model", label: "Model" },
 ];
 
-/** Tactics mark — a dotted movement path curving from the ball to a target. */
+/** Minimalist tactics board — open ring, curved play arrow, dotted run to a
+ *  target marker, and two defender X's, on the capital-blue tile. */
 function Mark() {
   return (
     <svg viewBox="0 0 104 104" aria-hidden="true" className="size-9 shrink-0">
-      <circle cx="52" cy="52" r="48" fill="#0059FF" />
-      {/* dotted tactics trajectory */}
-      <path
-        d="M30 74 Q 50 28 78 40"
-        fill="none"
-        stroke="#fff"
-        strokeWidth="4"
-        strokeLinecap="round"
-        strokeDasharray="0.1 10"
-      />
-      {/* ball at the start of the play */}
-      <circle cx="30" cy="74" r="8" fill="#fff" />
-      {/* arrowhead at the target */}
-      <path
-        d="M70 33 L80 39.5 L71 47"
-        fill="none"
-        stroke="#fff"
-        strokeWidth="4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      <rect x="2" y="2" width="100" height="100" rx="26" fill="#0059FF" />
+      <g fill="none" stroke="#fff" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="25" cy="60" r="7" />
+        <path d="M35 59 Q 63 55 75 78" />
+        <path d="M67 74 L76 80 L78 69" />
+        <path d="M52 50 L78 27" strokeDasharray="0.1 9" />
+        <path d="M50 28 L60 38 M60 28 L50 38" />
+        <path d="M30 82 L40 92 M40 82 L30 92" />
+      </g>
+      <circle cx="81" cy="24" r="6" fill="#fff" />
     </svg>
   );
 }
