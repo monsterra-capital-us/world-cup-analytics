@@ -62,7 +62,7 @@ export default async function ModelPage() {
               hint={
                 marketSubset.length
                   ? "Apples-to-apples: every source scored on the same matches"
-                  : "POST pre-match odds to /api/odds to unlock this comparison"
+                  : "Pinnacle lines are stored for all upcoming fixtures — this fills in as the first of them finishes"
               }
               scores={marketSubset}
             />
