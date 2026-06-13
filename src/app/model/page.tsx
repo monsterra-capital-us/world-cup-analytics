@@ -3,6 +3,7 @@ import { evaluate, ScoreRow } from "@/lib/model/evaluate";
 import { FIXTURE_BY_ID } from "@/data/fixtures";
 import { pct } from "@/lib/format";
 import { Card, LegendDot, SectionTitle, TeamChip } from "@/components/ui";
+import { WhitePaper } from "@/components/WhitePaper";
 
 export const dynamic = "force-dynamic";
 
@@ -101,6 +102,8 @@ export default async function ModelPage() {
           </Card>
         </>
       )}
+
+      <WhitePaper />
     </div>
   );
 }
