@@ -41,19 +41,31 @@ const NAV = [
   { href: "/model", label: "Model" },
 ];
 
-/** Minimalist ball — capital-blue disc with knocked-out pentagon panel and seams. */
+/** Tactics mark — a dotted movement path curving from the ball to a target. */
 function Mark() {
   return (
     <svg viewBox="0 0 104 104" aria-hidden="true" className="size-9 shrink-0">
       <circle cx="52" cy="52" r="48" fill="#0059FF" />
-      <g stroke="#fff" strokeWidth="4.5" strokeLinecap="round">
-        <line x1="52" y1="37" x2="52" y2="6" />
-        <line x1="66.3" y1="47.4" x2="95.7" y2="37.8" />
-        <line x1="60.8" y1="64.1" x2="79" y2="89.2" />
-        <line x1="43.2" y1="64.1" x2="25" y2="89.2" />
-        <line x1="37.7" y1="47.4" x2="8.3" y2="37.8" />
-      </g>
-      <polygon fill="#fff" points="52,37 66.3,47.4 60.8,64.1 43.2,64.1 37.7,47.4" />
+      {/* dotted tactics trajectory */}
+      <path
+        d="M30 74 Q 50 28 78 40"
+        fill="none"
+        stroke="#fff"
+        strokeWidth="4"
+        strokeLinecap="round"
+        strokeDasharray="0.1 10"
+      />
+      {/* ball at the start of the play */}
+      <circle cx="30" cy="74" r="8" fill="#fff" />
+      {/* arrowhead at the target */}
+      <path
+        d="M70 33 L80 39.5 L71 47"
+        fill="none"
+        stroke="#fff"
+        strokeWidth="4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
