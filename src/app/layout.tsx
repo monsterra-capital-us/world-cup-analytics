@@ -3,15 +3,12 @@ import localFont from "next/font/local";
 import Link from "next/link";
 import "./globals.css";
 
-// Type pairing: Poppins for display/headings (geometric, circular — the
-// closest free match to Google's Product Sans), Inter for body (legible),
-// JetBrains Mono for data and micro-labels.
+// Type pairing: Lexend for display/headings (close to Google Sans Text —
+// geometric-humanist, very Google-like), Inter for body, JetBrains Mono for
+// data and micro-labels.
 const fontHead = localFont({
-  src: [
-    { path: "../fonts/poppins-500-latin.woff2", weight: "500" },
-    { path: "../fonts/poppins-600-latin.woff2", weight: "600" },
-    { path: "../fonts/poppins-700-latin.woff2", weight: "700" },
-  ],
+  src: "../fonts/lexend-latin.woff2",
+  weight: "300 700",
   variable: "--font-head",
 });
 
