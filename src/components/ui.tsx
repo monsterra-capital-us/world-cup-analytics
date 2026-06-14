@@ -11,7 +11,7 @@ export function Card({
 }) {
   return (
     <section
-      className={`min-w-0 rounded-2xl border border-edge bg-surface shadow-[0_1px_2px_rgba(0,9,26,0.05),0_6px_16px_-6px_rgba(0,9,26,0.06)] ${className}`}
+      className={`min-w-0 rounded-2xl border border-edge bg-surface shadow-[0_2px_6px_rgba(14,16,32,0.06),0_1px_2px_rgba(14,16,32,0.04)] ${className}`}
     >
       {children}
     </section>

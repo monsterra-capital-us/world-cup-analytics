@@ -3,29 +3,29 @@ import localFont from "next/font/local";
 import Link from "next/link";
 import "./globals.css";
 
-// Monsterra brand fonts, self-hosted (extracted from the Mobile UI kit)
+// Monsterra Capital brand fonts, self-hosted: Inter for display + body,
+// JetBrains Mono for data/labels (Product Sans is proprietary; Inter is its
+// standard substitute and the kit's listed display fallback).
 const fontHead = localFont({
-  src: "../fonts/hanken-grotesk-latin.woff2",
+  src: "../fonts/inter-latin.woff2",
   weight: "100 900",
   variable: "--font-head",
 });
 
 const fontBody = localFont({
-  src: "../fonts/nunito-sans-latin.woff2",
+  src: "../fonts/inter-latin.woff2",
   weight: "100 900",
   variable: "--font-body",
 });
 
 const fontMono = localFont({
-  src: [
-    { path: "../fonts/ibm-plex-mono-400-latin.woff2", weight: "400" },
-    { path: "../fonts/ibm-plex-mono-500-latin.woff2", weight: "500" },
-  ],
+  src: "../fonts/jetbrains-mono-latin.woff2",
+  weight: "100 800",
   variable: "--font-plex-mono",
 });
 
 export const viewport: Viewport = {
-  themeColor: "#FFFFFF",
+  themeColor: "#F5F7FB",
 };
 
 export const metadata: Metadata = {

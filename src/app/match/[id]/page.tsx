@@ -237,8 +237,8 @@ function Row({ a, row, peak }: { a: number; row: number[]; peak: number }) {
           key={b}
           className="grid aspect-[5/3] place-items-center rounded-md text-[11px] tabular-nums"
           style={{
-            backgroundColor: `rgba(46, 119, 255, ${(p / peak) * 0.8 + 0.03})`,
-            color: p / peak > 0.55 ? "#fcfbf6" : undefined,
+            backgroundColor: `rgba(61, 92, 245, ${(p / peak) * 0.8 + 0.03})`,
+            color: p / peak > 0.55 ? "#ffffff" : undefined,
           }}
           title={`P(${a}–${b}) = ${pct(p, 2)}`}
         >

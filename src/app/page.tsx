@@ -297,7 +297,7 @@ function CellProb({ p }: { p: number }) {
   return (
     <span
       className="inline-block min-w-14 rounded px-1.5 py-0.5"
-      style={{ backgroundColor: `rgba(46, 119, 255, ${alpha})` }}
+      style={{ backgroundColor: `rgba(61, 92, 245, ${alpha})` }}
     >
       {pct(p)}
     </span>
