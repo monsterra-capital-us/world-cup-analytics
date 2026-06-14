@@ -3,12 +3,11 @@ import localFont from "next/font/local";
 import Link from "next/link";
 import "./globals.css";
 
-// Monsterra Capital brand fonts, self-hosted: Inter for display + body,
-// JetBrains Mono for data/labels (Product Sans is proprietary; Inter is its
-// standard substitute and the kit's listed display fallback).
+// Type pairing: Space Grotesk for display/headings (geometric, technical),
+// Inter for body (highly legible), JetBrains Mono for data and micro-labels.
 const fontHead = localFont({
-  src: "../fonts/inter-latin.woff2",
-  weight: "100 900",
+  src: "../fonts/space-grotesk-latin.woff2",
+  weight: "300 700",
   variable: "--font-head",
 });
 
