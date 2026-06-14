@@ -104,7 +104,7 @@ h1,
 h2,
 h3 {
   font-family: var(--font-head), ui-sans-serif, system-ui, sans-serif;
-  letter-spacing: -0.01em; /* Space Grotesk reads well with light tracking */
+  letter-spacing: -0.02em; /* tighten geometric Poppins headings */
 }
 
 .tabular-nums {

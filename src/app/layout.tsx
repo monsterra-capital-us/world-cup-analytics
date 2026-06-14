@@ -3,11 +3,15 @@ import localFont from "next/font/local";
 import Link from "next/link";
 import "./globals.css";
 
-// Type pairing: Space Grotesk for display/headings (geometric, technical),
-// Inter for body (highly legible), JetBrains Mono for data and micro-labels.
+// Type pairing: Poppins for display/headings (geometric, circular — the
+// closest free match to Google's Product Sans), Inter for body (legible),
+// JetBrains Mono for data and micro-labels.
 const fontHead = localFont({
-  src: "../fonts/space-grotesk-latin.woff2",
-  weight: "300 700",
+  src: [
+    { path: "../fonts/poppins-500-latin.woff2", weight: "500" },
+    { path: "../fonts/poppins-600-latin.woff2", weight: "600" },
+    { path: "../fonts/poppins-700-latin.woff2", weight: "700" },
+  ],
   variable: "--font-head",
 });
 
