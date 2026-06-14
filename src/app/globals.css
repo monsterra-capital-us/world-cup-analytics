@@ -95,7 +95,10 @@ body {
     radial-gradient(1100px 520px at 82% -12%, rgba(61, 92, 245, 0.08), transparent),
     radial-gradient(880px 440px at -5% 0%, rgba(31, 182, 201, 0.05), transparent);
   color: var(--foreground);
-  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  /* Brand body face: Product Sans where installed (proprietary; not bundled),
+     self-hosted Inter as the substitute everywhere else. */
+  font-family: "Product Sans", "Google Sans", var(--font-body), ui-sans-serif,
+    system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   letter-spacing: -0.011em;
 }
