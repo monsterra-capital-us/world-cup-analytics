@@ -6,7 +6,6 @@ import { pct, signed } from "@/lib/format";
 import { LocalTime } from "@/components/LocalTime";
 import {
   Card,
-  InjuryBadge,
   MatchLink,
   SectionTitle,
   TeamChip,
@@ -57,85 +56,50 @@ export default async function Dashboard() {
         </Stat>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-5">
-        {/* title race */}
-        <Card className="lg:col-span-3">
-          <SectionTitle
-            title="Title race"
-            hint="Probability of winning the World Cup — Monte Carlo over the full remaining tournament"
-          />
-          <div className="space-y-1 px-5 pb-5">
-            {contenders.map((o, i) => {
-              const t = TEAM_BY_ID[o.teamId];
-              const eloDelta = (state.elo[o.teamId] ?? t.baseElo) - t.baseElo;
-              return (
-                <div key={o.teamId} className="flex items-center gap-3 py-1">
-                  <span className="w-5 text-right text-xs tabular-nums text-muted">
-                    {i + 1}
-                  </span>
-                  <span className="w-28 shrink-0 truncate text-sm sm:w-44">
-                    <TeamChip teamId={o.teamId} bold={i < 3} />
-                  </span>
-                  <div className="h-3 flex-1 overflow-hidden rounded-full bg-surface-2">
-                    <div
-                      className={`h-full rounded-full ${i === 0 ? "bg-gold" : "bg-accent-dim"}`}
-                      style={{ width: `${(o.pChampion / maxTitle) * 100}%` }}
-                    />
-                  </div>
-                  <span className="w-14 text-right text-sm font-semibold tabular-nums">
-                    {pct(o.pChampion)}
-                  </span>
-                  <span
-                    className={`hidden w-12 text-right text-[11px] tabular-nums sm:block ${
-                      eloDelta > 0.5
-                        ? "text-success"
-                        : eloDelta < -0.5
-                          ? "text-danger"
-                          : "text-muted"
-                    }`}
-                    title="Elo change since tournament start"
-                  >
-                    {signed(eloDelta)}
-                  </span>
+      {/* title race */}
+      <Card>
+        <SectionTitle
+          title="Title race"
+          hint="Probability of winning the World Cup — Monte Carlo over the full remaining tournament"
+        />
+        <div className="space-y-1 px-5 pb-5">
+          {contenders.map((o, i) => {
+            const t = TEAM_BY_ID[o.teamId];
+            const eloDelta = (state.elo[o.teamId] ?? t.baseElo) - t.baseElo;
+            return (
+              <div key={o.teamId} className="flex items-center gap-3 py-1">
+                <span className="w-5 text-right text-xs tabular-nums text-muted">
+                  {i + 1}
+                </span>
+                <span className="w-28 shrink-0 truncate text-sm sm:w-44">
+                  <TeamChip teamId={o.teamId} bold={i < 3} />
+                </span>
+                <div className="h-3 flex-1 overflow-hidden rounded-full bg-surface-2">
+                  <div
+                    className={`h-full rounded-full ${i === 0 ? "bg-gold" : "bg-accent-dim"}`}
+                    style={{ width: `${(o.pChampion / maxTitle) * 100}%` }}
+                  />
                 </div>
-              );
-            })}
-          </div>
-        </Card>
-
-        {/* injuries */}
-        <Card className="lg:col-span-2">
-          <SectionTitle
-            title="Injury watch"
-            hint="Each flag lowers the team's effective rating in every forecast"
-          />
-          <div className="space-y-2 px-5 pb-5">
-            {state.injuries.length === 0 && (
-              <p className="py-4 text-sm text-muted">
-                No active injury flags. Squad news arrives via POST /api/injuries.
-              </p>
-            )}
-            {state.injuries.map((inj) => (
-              <div
-                key={inj.id}
-                className="flex items-start gap-3 rounded-xl bg-surface-2/60 px-3 py-2.5"
-              >
-                <span className="mt-0.5 text-base">{TEAM_BY_ID[inj.teamId].flag}</span>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="truncate text-sm font-medium">{inj.player}</span>
-                    <InjuryBadge status={inj.status} />
-                  </div>
-                  <p className="mt-0.5 truncate text-xs text-muted">
-                    {TEAM_BY_ID[inj.teamId].name}
-                    {inj.detail ? ` — ${inj.detail}` : ""}
-                  </p>
-                </div>
+                <span className="w-14 text-right text-sm font-semibold tabular-nums">
+                  {pct(o.pChampion)}
+                </span>
+                <span
+                  className={`hidden w-12 text-right text-[11px] tabular-nums sm:block ${
+                    eloDelta > 0.5
+                      ? "text-success"
+                      : eloDelta < -0.5
+                        ? "text-danger"
+                        : "text-muted"
+                  }`}
+                  title="Elo change since tournament start"
+                >
+                  {signed(eloDelta)}
+                </span>
               </div>
-            ))}
-          </div>
-        </Card>
-      </div>
+            );
+          })}
+        </div>
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* upcoming matches */}

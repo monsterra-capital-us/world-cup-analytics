@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import Link from "next/link";
+import { NavLinks } from "@/components/NavLinks";
 import "./globals.css";
 
 // Type pairing: Lexend for display/headings (close to Google Sans Text —
@@ -82,17 +83,7 @@ export default function RootLayout({
                 </span>
               </span>
             </Link>
-            <nav className="no-scrollbar -mx-1 flex w-full items-center gap-1 overflow-x-auto px-1 text-sm md:ml-auto md:w-auto md:overflow-visible md:px-0">
-              {NAV.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="shrink-0 whitespace-nowrap rounded-lg px-3 py-1.5 text-muted transition-colors hover:bg-surface-2 hover:text-foreground"
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
+            <NavLinks items={NAV} />
           </div>
         </header>
         <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6">
