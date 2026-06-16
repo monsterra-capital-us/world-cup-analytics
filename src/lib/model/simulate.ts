@@ -18,7 +18,8 @@ import {
 import { effectiveRating, teamFactors } from "./strength";
 import { eloExpected } from "./elo";
 import { devig } from "./market";
-import { Fixture, OutcomeProbs } from "@/lib/types";
+import { PRIOR_CALIBRATION } from "./calibration";
+import { Calibration, Fixture, OutcomeProbs } from "@/lib/types";
 
 export const SIMULATIONS = 5000;
 
@@ -33,26 +34,31 @@ function mulberry32(seed: number): () => number {
   };
 }
 
-/** memoised score distributions keyed by rating diff rounded to 4 Elo pts */
-function makeDistCache(goalScale = 1) {
+/**
+ * Memoised score distributions keyed by rating diff rounded to 4 Elo pts.
+ * The calibrated rating scale and base-goals level are applied here so the
+ * Monte-Carlo knockouts use the same online-learned model as the UI.
+ */
+function makeDistCache(cal: Calibration, goalScale = 1) {
   const cache = new Map<number, ScoreDistribution>();
   return (diff: number): ScoreDistribution => {
     const key = Math.round(diff / 4);
     let d = cache.get(key);
     if (!d) {
-      d = scoreDistribution(key * 4, goalScale);
+      d = scoreDistribution(key * 4 * cal.ratingScale, {
+        baseGoals: cal.baseGoals,
+        goalScale,
+      });
       cache.set(key, d);
     }
     return d;
   };
 }
 
-/** Elo points credited to a host nation playing in its own country */
-export const HOME_ADVANTAGE = 55;
-
-function homeEdge(f: Fixture): number {
-  if (f.home === f.country) return HOME_ADVANTAGE;
-  if (f.away === f.country) return -HOME_ADVANTAGE;
+/** +1 if the home team hosts in its own country, −1 if the away team does */
+export function hostSign(f: Fixture): number {
+  if (f.home === f.country) return 1;
+  if (f.away === f.country) return -1;
   return 0;
 }
 
@@ -155,9 +161,12 @@ export function predictFixture(
   state: TournamentState,
 ): { model: OutcomeProbs; market?: OutcomeProbs; matrix: number[][]; d: ScoreDistribution; edge: number } {
   const f = FIXTURES.find((x) => x.id === fixtureId)!;
-  const edge = homeEdge(f);
-  const diff = effectiveRating(f.home, state) - effectiveRating(f.away, state) + edge;
-  const d = scoreDistribution(diff);
+  const cal = state.calibration ?? PRIOR_CALIBRATION;
+  const edge = hostSign(f) * cal.homeAdv;
+  const rawDiff = effectiveRating(f.home, state) - effectiveRating(f.away, state);
+  const d = scoreDistribution((rawDiff + edge) * cal.ratingScale, {
+    baseGoals: cal.baseGoals,
+  });
   const model: OutcomeProbs = { pHome: d.pA, pDraw: d.pDraw, pAway: d.pB };
   const odds = state.marketOdds[fixtureId];
   return { model, market: odds ? devig(odds) : undefined, matrix: d.matrix, d, edge };
@@ -165,7 +174,8 @@ export function predictFixture(
 
 export function runSimulation(state: TournamentState, nSims = SIMULATIONS): Predictions {
   const rand = mulberry32(20260611 ^ state.version);
-  const koDist = makeDistCache(KNOCKOUT_GOAL_SCALE);
+  const cal = state.calibration ?? PRIOR_CALIBRATION;
+  const koDist = makeDistCache(cal, KNOCKOUT_GOAL_SCALE);
   const ratings: Record<string, number> = {};
   for (const t of TEAMS) ratings[t.id] = effectiveRating(t.id, state);
 

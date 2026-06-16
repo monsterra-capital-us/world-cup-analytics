@@ -2,8 +2,9 @@ import { Injury, MarketOdds, MatchResult, Predictions, TournamentState } from ".
 import { TEAM_BY_ID, TEAMS } from "@/data/teams";
 import { FIXTURE_BY_ID } from "@/data/fixtures";
 import { eloUpdate } from "./model/elo";
-import { injuryPenalty } from "./model/strength";
-import { predictFixture, runSimulation } from "./model/simulate";
+import { effectiveRating, injuryPenalty } from "./model/strength";
+import { hostSign, predictFixture, runSimulation } from "./model/simulate";
+import { calibrationStep, Outcome, PRIOR_CALIBRATION } from "./model/calibration";
 import { validateOdds } from "./model/market";
 import { getStorage } from "./storage";
 
@@ -14,6 +15,7 @@ function freshState(): TournamentState {
     results: {},
     injuries: [],
     marketOdds: {},
+    calibration: { ...PRIOR_CALIBRATION },
   };
 }
 
@@ -21,6 +23,7 @@ export async function loadState(): Promise<TournamentState> {
   const stored = await getStorage().load();
   if (stored) {
     stored.marketOdds ??= {}; // migrate pre-market states
+    stored.calibration ??= { ...PRIOR_CALIBRATION }; // migrate pre-calibration states
     // drop the illustrative sample injuries earlier versions seeded — only
     // real squad news (POST /api/injuries) should move ratings
     const real = stored.injuries.filter((i) => !i.id.startsWith("seed-"));
@@ -79,6 +82,19 @@ export async function recordResult(
     forecast: { model, market },
   };
   state.results[fixtureId] = result;
+
+  // online self-calibration: one learning step from this result, using the
+  // pre-match effective ratings (captured before the Elo update below).
+  const rawDiff =
+    effectiveRating(fixture.home, state) - effectiveRating(fixture.away, state);
+  const outcome: Outcome =
+    homeGoals > awayGoals ? "home" : homeGoals < awayGoals ? "away" : "draw";
+  state.calibration = calibrationStep(
+    state.calibration ?? PRIOR_CALIBRATION,
+    rawDiff,
+    hostSign(fixture),
+    outcome,
+  );
 
   const { newA, newB } = eloUpdate(
     state.elo[fixture.home], state.elo[fixture.away], homeGoals, awayGoals,

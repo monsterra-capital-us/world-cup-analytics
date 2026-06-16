@@ -87,6 +87,28 @@ export interface TournamentState {
   marketOdds: Record<string, MarketOdds>;
   /** last time the injuries feed was queried (throttles polling) */
   lastInjurySyncAt?: string;
+  /** online-learned model parameters, refined after every recorded result */
+  calibration?: Calibration;
+}
+
+/**
+ * Model hyper-parameters the engine learns online from realised results.
+ * Each finished match nudges these by one regularised gradient step
+ * (see src/lib/model/calibration.ts) so the model self-corrects over the
+ * tournament toward the outcomes actually observed.
+ */
+export interface Calibration {
+  /** sensitivity of win probability to the rating gap (inverse temperature) */
+  ratingScale: number;
+  /** host-nation home advantage, in Elo points */
+  homeAdv: number;
+  /** neutral baseline goals per team */
+  baseGoals: number;
+  /** number of completed matches learned from */
+  n: number;
+  /** running mean log-loss of the model on learned matches */
+  meanLogLoss?: number;
+  updatedAt?: string;
 }
 
 export interface MatchPrediction {

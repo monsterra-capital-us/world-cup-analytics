@@ -6,8 +6,8 @@
 
 export const MAX_GOALS = 8;
 
-/** average goals per team per match at recent World Cups */
-const BASE_GOALS = 1.32;
+/** default average goals per team per match at recent World Cups */
+export const BASE_GOALS = 1.32;
 /** how strongly a rating edge converts into a goals edge */
 const GOAL_ELASTICITY = 1.05;
 /** Dixon-Coles correlation for 0-0/1-0/0-1/1-1 */
@@ -16,14 +16,24 @@ const RHO = -0.08;
 /** knockout matches are cagier: scale expected goals down */
 export const KNOCKOUT_GOAL_SCALE = 0.88;
 
+/** tunable inputs to the goals model (online-calibrated; all optional) */
+export interface GoalParams {
+  baseGoals?: number;
+  elasticity?: number;
+  goalScale?: number;
+}
+
 export function expectedGoals(
   ratingDiff: number,
-  goalScale = 1,
+  p: GoalParams = {},
 ): { lambdaA: number; lambdaB: number } {
-  const shift = Math.exp((GOAL_ELASTICITY * ratingDiff) / 400);
+  const baseGoals = p.baseGoals ?? BASE_GOALS;
+  const elasticity = p.elasticity ?? GOAL_ELASTICITY;
+  const goalScale = p.goalScale ?? 1;
+  const shift = Math.exp((elasticity * ratingDiff) / 400);
   return {
-    lambdaA: clamp(BASE_GOALS * goalScale * shift, 0.15, 4.6),
-    lambdaB: clamp((BASE_GOALS * goalScale) / shift, 0.15, 4.6),
+    lambdaA: clamp(baseGoals * goalScale * shift, 0.15, 4.6),
+    lambdaB: clamp((baseGoals * goalScale) / shift, 0.15, 4.6),
   };
 }
 
@@ -54,8 +64,8 @@ export interface ScoreDistribution {
   lambdaB: number;
 }
 
-export function scoreDistribution(ratingDiff: number, goalScale = 1): ScoreDistribution {
-  const { lambdaA, lambdaB } = expectedGoals(ratingDiff, goalScale);
+export function scoreDistribution(ratingDiff: number, p: GoalParams = {}): ScoreDistribution {
+  const { lambdaA, lambdaB } = expectedGoals(ratingDiff, p);
   const pmfA = Array.from({ length: MAX_GOALS + 1 }, (_, k) => poissonPmf(lambdaA, k));
   const pmfB = Array.from({ length: MAX_GOALS + 1 }, (_, k) => poissonPmf(lambdaB, k));
 

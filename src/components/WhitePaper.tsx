@@ -251,7 +251,39 @@ export function WhitePaper() {
         </P>
 
         {/* ───────────── 8 ───────────── */}
-        <H id="limits">8 · Assumptions &amp; limitations</H>
+        <H id="online">8 · Online self-calibration</H>
+        <P>
+          Beyond the Elo update, the model also tunes its own hyper-parameters
+          from results — so the algorithm itself, not just the ratings, improves
+          as the tournament unfolds. After each finished match it takes one
+          regularised gradient step to reduce the log loss it would have given
+          the outcome that actually occurred, over three identifiable
+          parameters: the <strong>rating sensitivity</strong> (an
+          inverse-temperature controlling how sharply a rating gap becomes a win
+          probability), the <strong>host advantage</strong>, and the{" "}
+          <strong>scoring level</strong> μ. Writing θ for a parameter and{" "}
+          <code>L = −ln p_outcome</code>:
+        </P>
+        <Formula>
+          θ ← clamp( θ − η · c² · ∂L/∂θ ) , then θ ← θ + ρ·(θ_prior − θ)
+        </Formula>
+        <P>
+          Gradients are estimated by finite differences and taken in a
+          scale-normalised space (<code>c</code> is each parameter&apos;s
+          characteristic scale); the learning rate <code>η</code> decays as{" "}
+          <code>1/√(1 + n/8)</code>, each step is capped, and a pull{" "}
+          <code>ρ = 0.03</code> toward the prior keeps a handful of early games
+          from making the model lurch. The current learned values and how far
+          they have moved from their priors are shown in the Adaptive
+          calibration panel above. This is the honest route toward
+          market-grade accuracy: sharp closing lines are not guaranteed to be
+          beatable, but a model that continuously re-fits to what actually
+          happens is how you close — and on favourable subsets, sometimes
+          cross — that gap.
+        </P>
+
+        {/* ───────────── 9 ───────────── */}
+        <H id="limits">9 · Assumptions &amp; limitations</H>
         <P>
           The model is deliberately transparent rather than maximal. It treats
           team strength as one scalar (no explicit attack/defence split beyond
@@ -265,10 +297,11 @@ export function WhitePaper() {
         </P>
 
         <p className="mt-8 border-t border-edge/60 pt-4 text-xs text-muted">
-          Constants in force: baseline goals μ = 1.32 · goal elasticity γ =
-          1.05 · Dixon–Coles ρ = −0.08 · knockout goal scale 0.88 · Elo K = 50 ·
-          injury scale 65 (cap 160) · host advantage 55 Elo · 5,000 simulations
-          · score matrix 0–8 goals. Source: <code>src/lib/model/</code>.
+          Priors in force (then learned online): baseline goals μ = 1.32 · goal
+          elasticity γ = 1.05 · Dixon–Coles ρ = −0.08 · knockout goal scale 0.88
+          · Elo K = 50 · injury scale 65 (cap 160) · host advantage 55 Elo ·
+          rating sensitivity ×1.00 · 5,000 simulations · score matrix 0–8 goals.
+          Source: <code>src/lib/model/</code>.
         </p>
       </div>
     </Card>

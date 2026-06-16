@@ -1,9 +1,11 @@
 import { loadState } from "@/lib/store";
 import { evaluate, ScoreRow } from "@/lib/model/evaluate";
+import { PRIOR_CALIBRATION } from "@/lib/model/calibration";
 import { FIXTURE_BY_ID } from "@/data/fixtures";
-import { pct } from "@/lib/format";
+import { pct, signed } from "@/lib/format";
 import { Card, LegendDot, SectionTitle, TeamChip } from "@/components/ui";
 import { WhitePaper } from "@/components/WhitePaper";
+import { Calibration } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -103,8 +105,78 @@ export default async function ModelPage() {
         </>
       )}
 
+      <CalibrationCard cal={state.calibration ?? PRIOR_CALIBRATION} />
+
       <WhitePaper />
     </div>
+  );
+}
+
+const CAL_PARAMS = [
+  {
+    key: "ratingScale" as const,
+    label: "Rating sensitivity",
+    blurb: "how sharply a rating gap maps to win probability",
+    fmt: (v: number) => `×${v.toFixed(3)}`,
+    delta: (v: number, p: number) => `${signed(((v - p) / p) * 100, 0)}%`,
+  },
+  {
+    key: "homeAdv" as const,
+    label: "Host advantage",
+    blurb: "home edge for the host nations, in Elo",
+    fmt: (v: number) => `${Math.round(v)} Elo`,
+    delta: (v: number, p: number) => `${signed(v - p, 0)}`,
+  },
+  {
+    key: "baseGoals" as const,
+    label: "Scoring level",
+    blurb: "neutral goals per team — shapes draws & margins",
+    fmt: (v: number) => v.toFixed(3),
+    delta: (v: number, p: number) => `${signed(v - p, 2)}`,
+  },
+];
+
+function CalibrationCard({ cal }: { cal: Calibration }) {
+  return (
+    <Card>
+      <SectionTitle
+        title="Adaptive calibration"
+        hint={
+          cal.n > 0
+            ? `The model has self-tuned over ${cal.n} completed ${cal.n === 1 ? "match" : "matches"} (one online gradient step each). Values drift from the priors as results accumulate.`
+            : "The model tunes these parameters online after every match. No completed matches yet — values sit at their priors."
+        }
+      />
+      <div className="grid gap-4 px-5 pb-5 sm:grid-cols-3">
+        {CAL_PARAMS.map((p) => {
+          const v = cal[p.key];
+          const prior = PRIOR_CALIBRATION[p.key];
+          const moved = Math.abs(v - prior) > 1e-6;
+          return (
+            <div key={p.key} className="rounded-xl bg-surface-2/60 p-4">
+              <p className="text-xs text-muted">{p.label}</p>
+              <p className="mt-1 text-xl font-bold tabular-nums">{p.fmt(v)}</p>
+              <p className="mt-1 text-[11px] text-muted">
+                prior {p.fmt(prior)}
+                {moved && (
+                  <span className="ml-1 text-accent">({p.delta(v, prior)})</span>
+                )}
+              </p>
+              <p className="mt-2 text-[11px] leading-snug text-muted">{p.blurb}</p>
+            </div>
+          );
+        })}
+      </div>
+      {cal.meanLogLoss !== undefined && cal.n > 0 && (
+        <p className="px-5 pb-5 text-xs text-muted">
+          Mean pre-match log loss over learned matches:{" "}
+          <span className="tabular-nums text-foreground">
+            {cal.meanLogLoss.toFixed(4)}
+          </span>{" "}
+          (lower is sharper).
+        </p>
+      )}
+    </Card>
   );
 }
 
