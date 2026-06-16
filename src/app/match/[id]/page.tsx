@@ -5,8 +5,8 @@ import { FIXTURE_BY_ID } from "@/data/fixtures";
 import { TEAM_BY_ID } from "@/data/teams";
 import { pct, signed } from "@/lib/format";
 import { LocalTime } from "@/components/LocalTime";
-import { Card, CompareBars, InjuryBadge, SectionTitle, TeamChip, WdlBar } from "@/components/ui";
-import { TeamFactors } from "@/lib/types";
+import { Card, CompareBars, SectionTitle, TeamChip, WdlBar } from "@/components/ui";
+import { MatchResult, TeamFactors } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -185,8 +185,13 @@ export default async function MatchPage({
             hint="How each team's effective rating is built"
           />
           <div className="space-y-5 px-5 pb-5">
-            {mp.factors.map((f) => (
-              <FactorBlock key={f.teamId} factors={f} />
+            {mp.factors.map((f, i) => (
+              <FactorBlock
+                key={f.teamId}
+                factors={f}
+                record={teamRecord(f.teamId, Object.values(state.results))}
+                hostEdge={i === 0 ? Math.max(mp.homeEdge, 0) : Math.max(-mp.homeEdge, 0)}
+              />
             ))}
           </div>
         </Card>
@@ -249,53 +254,89 @@ function Row({ a, row, peak }: { a: number; row: number[]; peak: number }) {
   );
 }
 
-function FactorBlock({ factors }: { factors: TeamFactors }) {
+interface TeamRecord {
+  played: number;
+  w: number;
+  d: number;
+  l: number;
+  gf: number;
+  ga: number;
+}
+
+function teamRecord(teamId: string, results: MatchResult[]): TeamRecord {
+  const rec: TeamRecord = { played: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0 };
+  for (const r of results) {
+    const f = FIXTURE_BY_ID[r.fixtureId];
+    if (!f || (f.home !== teamId && f.away !== teamId)) continue;
+    const isHome = f.home === teamId;
+    const gf = isHome ? r.homeGoals : r.awayGoals;
+    const ga = isHome ? r.awayGoals : r.homeGoals;
+    rec.played++;
+    rec.gf += gf;
+    rec.ga += ga;
+    if (gf > ga) rec.w++;
+    else if (gf < ga) rec.l++;
+    else rec.d++;
+  }
+  return rec;
+}
+
+function FactorBlock({
+  factors,
+  record,
+  hostEdge,
+}: {
+  factors: TeamFactors;
+  record: TeamRecord;
+  hostEdge: number;
+}) {
   const team = TEAM_BY_ID[factors.teamId];
+  const delta = factors.currentElo - factors.baseElo;
   return (
     <div className="rounded-xl bg-surface-2/60 p-4">
       <div className="flex items-center justify-between">
         <TeamChip teamId={factors.teamId} bold />
         <span className="text-sm font-bold tabular-nums">
           {Math.round(factors.effectiveRating)}
-          <span className="ml-1 text-xs font-normal text-muted">effective</span>
+          <span className="ml-1 text-xs font-normal text-muted">rating</span>
         </span>
       </div>
       <dl className="mt-3 space-y-1.5 text-xs">
         <FactorRow label="Pre-tournament Elo" value={String(Math.round(factors.baseElo))} />
+        <FactorRow label="FIFA ranking" value={`#${team.fifaRank}`} />
         <FactorRow
           label="In-tournament form (Elo Δ)"
-          value={signed(factors.currentElo - factors.baseElo, 1)}
-          tone={
-            factors.currentElo > factors.baseElo
-              ? "good"
-              : factors.currentElo < factors.baseElo
-                ? "bad"
-                : undefined
-          }
+          value={signed(delta, 1)}
+          tone={delta > 0.5 ? "good" : delta < -0.5 ? "bad" : undefined}
         />
         <FactorRow
-          label="Injury penalty"
-          value={factors.injuryPenalty > 0 ? `−${factors.injuryPenalty.toFixed(1)}` : "0"}
-          tone={factors.injuryPenalty > 0 ? "bad" : undefined}
+          label="Tournament record"
+          value={
+            record.played
+              ? `${record.w}W ${record.d}D ${record.l}L`
+              : "not yet played"
+          }
         />
+        {record.played > 0 && (
+          <FactorRow
+            label="Goals (for–against)"
+            value={`${record.gf}–${record.ga}`}
+            tone={
+              record.gf > record.ga ? "good" : record.gf < record.ga ? "bad" : undefined
+            }
+          />
+        )}
+        {hostEdge > 0 && (
+          <FactorRow
+            label="Host advantage"
+            value={`+${Math.round(hostEdge)} Elo`}
+            tone="good"
+          />
+        )}
       </dl>
-      {factors.injuries.length > 0 && (
-        <ul className="mt-3 space-y-1.5 border-t border-edge/60 pt-3">
-          {factors.injuries.map((inj) => (
-            <li key={inj.id} className="flex items-center gap-2 text-xs">
-              <InjuryBadge status={inj.status} />
-              <span className="font-medium">{inj.player}</span>
-              <span className="truncate text-muted">{inj.detail}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-      {factors.injuries.length === 0 && (
-        <p className="mt-3 border-t border-edge/60 pt-3 text-xs text-muted">
-          No injury concerns — full-strength squad assumed. Key players:{" "}
-          {team.keyPlayers.map((p) => p.name).join(", ")}.
-        </p>
-      )}
+      <p className="mt-3 border-t border-edge/60 pt-3 text-xs text-muted">
+        Key players: {team.keyPlayers.map((p) => p.name).join(", ")}.
+      </p>
     </div>
   );
 }
